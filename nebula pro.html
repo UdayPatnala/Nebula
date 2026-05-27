@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nebula Pro | Intelligent Memory Gallery</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exifreader@4.12.0/dist/exif-reader.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            nebula: {
+              base: "#0b1020",
+              card: "#0f172a",
+              line: "#1f2a44",
+              highlight: "#22d3ee",
+              accent: "#6366f1"
+            }
+          },
+          fontFamily: {
+            sans: ["Outfit", "system-ui", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700;800;900&display=swap");
+
+    :root {
+      --bg-radial-1: radial-gradient(60rem 35rem at 5% 0%, rgba(34, 211, 238, 0.18), transparent 60%);
+      --bg-radial-2: radial-gradient(50rem 35rem at 95% 0%, rgba(99, 102, 241, 0.18), transparent 60%);
+      --bg-grid: linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+    }
+
+    body {
+      min-height: 100vh;
+      background-color: #020617;
+      background-image: var(--bg-radial-1), var(--bg-radial-2), var(--bg-grid);
+      background-size: auto, auto, 30px 30px;
+      color: #e2e8f0;
+      transition: background-color 0.35s ease, color 0.35s ease;
+    }
+
+    .light body {
+      background-color: #f8fafc;
+    }
+
+    .glass {
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .dark .glass-soft {
+      background: rgba(15, 23, 42, 0.45);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+    }
+
+    .light .glass,
+    .light .glass-soft {
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(15, 23, 42, 0.1);
+      color: #0f172a;
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, #22d3ee 0%, #6366f1 45%, #f59e0b 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    .timeline-line::before {
+      content: "";
+      position: absolute;
+      left: 11px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(to bottom, rgba(34, 211, 238, 0.9), rgba(99, 102, 241, 0.1));
+    }
+
+    .masonry {
+      columns: 1;
+      column-gap: 1rem;
+    }
+
+    @media (min-width: 768px) {
+      .masonry {
+        columns: 2;
+      }
+    }
+
+    @media (min-width: 1200px) {
+      .masonry {
+        columns: 3;
+      }
+    }
+
+    .masonry-item {
+      break-inside: avoid;
+      margin-bottom: 1rem;
+    }
+
+    .style-card.active {
+      outline: 2px solid rgba(34, 211, 238, 0.95);
+      box-shadow: 0 0 0 6px rgba(34, 211, 238, 0.16);
+    }
+
+    .pulse-ring {
+      animation: pulseRing 1.7s ease-out infinite;
+    }
+
+    @keyframes pulseRing {
+      0% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.45); }
+      75% { box-shadow: 0 0 0 16px rgba(34, 211, 238, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0); }
+    }
+
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.8); border-radius: 999px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.12); }
+  </style>
+</head>
+<body class="font-sans antialiased">
+  <nav class="sticky top-0 z-50 border-b border-slate-700/40 bg-slate-950/70 backdrop-blur-xl px-4 md:px-8 py-3">
+    <div class="max-w-[1600px] mx-auto flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <button id="back-btn" aria-label="Go back" class="hidden p-2 rounded-xl hover:bg-slate-800/70 transition">
+          <i data-lucide="arrow-left"></i>
+        </button>
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 via-indigo-500 to-amber-400 shadow-xl shadow-cyan-500/30"></div>
+        <div>
+          <p class="text-xs uppercase tracking-[0.3em] text-cyan-300">Nebula Pro</p>
+          <p class="text-sm md:text-base font-semibold text-slate-100">Intelligent Personal Gallery Engine</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 md:gap-5">
+        <div class="hidden md:flex items-center gap-2 text-xs">
+          <span class="px-2 py-1 rounded-lg bg-slate-800/80 border border-slate-600/40" id="top-assets">0 assets</span>
+          <span class="px-2 py-1 rounded-lg bg-slate-800/80 border border-slate-600/40" id="top-duplicates">0 merged</span>
+          <span class="px-2 py-1 rounded-lg bg-slate-800/80 border border-slate-600/40" id="top-clusters">0 clusters</span>
+        </div>
+        <button id="theme-btn" aria-label="Toggle theme" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 transition">
+          <i data-lucide="sun" class="dark:hidden"></i>
+          <i data-lucide="moon" class="hidden dark:block"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="px-4 md:px-8 pb-14 pt-8 max-w-[1600px] mx-auto">
+    <section id="view-home" class="view active">
+      <div class="grid lg:grid-cols-[1.2fr_0.8fr] gap-8 items-stretch">
+        <div class="glass rounded-3xl p-8 md:p-12">
+          <p class="text-xs uppercase tracking-[0.28em] text-cyan-300 mb-4">Production Workflow</p>
+          <h1 class="text-4xl md:text-6xl font-black leading-[0.95] mb-5">
+            Transform raw photos into a
+            <span class="gradient-text">cinematic intelligence gallery</span>.
+          </h1>
+          <p class="text-slate-300/90 max-w-2xl text-lg">
+            Folder-first ingestion, metadata + vision analysis, duplicate merging, date/location clustering, and premium animated presentation modes.
+          </p>
+
+          <div class="mt-10 grid sm:grid-cols-2 gap-4">
+            <button onclick="triggerInput('folder')" class="group rounded-2xl border border-cyan-300/30 bg-cyan-400/10 hover:bg-cyan-300/15 transition px-6 py-6 text-left">
+              <div class="flex items-center justify-between mb-3">
+                <i data-lucide="folder-search" class="text-cyan-300"></i>
+                <span class="text-[11px] uppercase tracking-[0.22em] text-cyan-200">Primary</span>
+              </div>
+              <h3 class="text-xl font-semibold mb-1">Select Folder</h3>
+              <p class="text-sm text-slate-300">Recursive ingest from device directories (recommended).</p>
+            </button>
+
+            <button onclick="triggerInput('files')" class="group rounded-2xl border border-indigo-300/30 bg-indigo-400/10 hover:bg-indigo-300/15 transition px-6 py-6 text-left">
+              <div class="flex items-center justify-between mb-3">
+                <i data-lucide="images" class="text-indigo-300"></i>
+                <span class="text-[11px] uppercase tracking-[0.22em] text-indigo-200">Secondary</span>
+              </div>
+              <h3 class="text-xl font-semibold mb-1">Select Images</h3>
+              <p class="text-sm text-slate-300">Fallback mode for multi-image upload from device.</p>
+            </button>
+          </div>
+
+          <div class="mt-8 flex flex-wrap items-center gap-3 text-sm text-slate-300">
+            <span class="px-3 py-1 rounded-full border border-slate-600/50">EXIF Time + Location</span>
+            <span class="px-3 py-1 rounded-full border border-slate-600/50">Person Detection</span>
+            <span class="px-3 py-1 rounded-full border border-slate-600/50">Scene Classification</span>
+            <span class="px-3 py-1 rounded-full border border-slate-600/50">Smart Deduplication</span>
+            <span class="px-3 py-1 rounded-full border border-slate-600/50">Timeline Auto-Sort</span>
+          </div>
+        </div>
+
+        <div class="glass rounded-3xl p-8 flex flex-col gap-5">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold">Pipeline Contract</h2>
+            <span class="text-[11px] uppercase tracking-[0.22em] text-cyan-300">Industry Standard</span>
+          </div>
+          <ol class="space-y-4 text-sm">
+            <li class="p-4 rounded-xl border border-slate-700/70 bg-slate-900/45">1. Open webpage and ingest folder as primary source.</li>
+            <li class="p-4 rounded-xl border border-slate-700/70 bg-slate-900/45">2. Choose one of 5 presentation interfaces.</li>
+            <li class="p-4 rounded-xl border border-slate-700/70 bg-slate-900/45">3. Wait while preprocessing, clustering, deduping and inference run.</li>
+            <li class="p-4 rounded-xl border border-slate-700/70 bg-slate-900/45">4. Enter cinematic presentation mode with animated transitions.</li>
+          </ol>
+
+          <div class="mt-auto p-4 rounded-xl border border-amber-300/30 bg-amber-400/10 text-sm text-amber-100">
+            <p class="font-semibold mb-1">Privacy by Design</p>
+            <p>All processing remains local in your browser runtime.</p>
+          </div>
+        </div>
+      </div>
+
+      <input type="file" id="file-input" accept="image/*" multiple class="hidden" onchange="handleFileSelection(event)" />
+    </section>
+
+    <section id="view-style" class="view">
+      <div class="glass rounded-3xl p-7 md:p-10">
+        <div class="flex flex-wrap items-end justify-between gap-4 mb-8">
+          <div>
+            <p class="text-xs uppercase tracking-[0.24em] text-cyan-300">Presentation Library</p>
+            <h2 class="text-3xl md:text-4xl font-bold mt-2">Choose Your Default Web Interface</h2>
+            <p class="text-slate-300 mt-2">3-5 ready templates, tuned for dynamic memory storytelling.</p>
+          </div>
+          <button onclick="setView('home')" class="px-4 py-2 rounded-xl border border-slate-600 hover:bg-slate-800/60 transition">Change Inputs</button>
+        </div>
+
+        <div id="style-grid" class="grid md:grid-cols-2 xl:grid-cols-3 gap-5"></div>
+      </div>
+    </section>
+
+    <section id="view-processing" class="view">
+      <div class="grid xl:grid-cols-[360px_1fr] gap-6">
+        <aside class="glass rounded-3xl p-6 space-y-6 h-fit xl:sticky top-24">
+          <div>
+            <p class="text-xs uppercase tracking-[0.22em] text-cyan-300 mb-2">Processing Status</p>
+            <h3 class="text-2xl font-bold" id="processing-title">Initializing Pipeline...</h3>
+            <p class="text-sm text-slate-300 mt-2" id="processing-subtitle">Preparing models and validating assets.</p>
+          </div>
+
+          <div class="space-y-3" id="pipeline-steps"></div>
+
+          <div>
+            <div class="flex items-center justify-between mb-2 text-sm">
+              <span>Overall Progress</span>
+              <span id="progress-text">0%</span>
+            </div>
+            <div class="h-2 rounded-full bg-slate-800 overflow-hidden">
+              <div id="progress-bar" class="h-full bg-gradient-to-r from-cyan-400 to-indigo-500 w-0 transition-all"></div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 text-sm">
+            <div class="rounded-xl border border-slate-700/70 p-3 bg-slate-900/50">
+              <p class="text-slate-400">Analyzed</p>
+              <p class="text-xl font-bold" id="stat-analyzed">0</p>
+            </div>
+            <div class="rounded-xl border border-slate-700/70 p-3 bg-slate-900/50">
+              <p class="text-slate-400">Merged</p>
+              <p class="text-xl font-bold" id="stat-merged">0</p>
+            </div>
+            <div class="rounded-xl border border-slate-700/70 p-3 bg-slate-900/50">
+              <p class="text-slate-400">Persons</p>
+              <p class="text-xl font-bold" id="stat-persons">0</p>
+            </div>
+            <div class="rounded-xl border border-slate-700/70 p-3 bg-slate-900/50">
+              <p class="text-slate-400">Clusters</p>
+              <p class="text-xl font-bold" id="stat-clusters">0</p>
+            </div>
+          </div>
+        </aside>
+
+        <div class="glass rounded-3xl p-6 md:p-8">
+          <div class="flex items-center justify-between gap-3 mb-5">
+            <h3 class="text-xl font-semibold">Live Processing Console</h3>
+            <div class="flex items-center gap-2 text-xs">
+              <span class="w-2 h-2 rounded-full bg-cyan-300 pulse-ring"></span>
+              <span class="uppercase tracking-[0.2em] text-cyan-200">Live</span>
+            </div>
+          </div>
+          <div id="process-log" class="h-[60vh] overflow-auto rounded-2xl border border-slate-700/70 bg-slate-900/70 p-4 font-mono text-xs leading-6"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-presentation" class="view">
+      <div class="glass rounded-3xl p-5 md:p-8">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-7">
+          <div>
+            <p class="text-xs uppercase tracking-[0.24em] text-cyan-300">Presentation Mode</p>
+            <h2 class="text-2xl md:text-4xl font-bold">Cinematic Memory Output</h2>
+            <p class="text-slate-300 mt-2" id="presentation-summary"></p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2" id="style-switcher"></div>
+        </div>
+
+        <div id="presentation-container"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="hidden fixed bottom-5 right-5 z-[100] px-4 py-3 rounded-xl text-sm font-semibold shadow-2xl"></div>
+
+  <script>
+    const STYLE_LIBRARY = [
+      {
+        id: "nebula-mosaic",
+        name: "Nebula Mosaic",
+        tagline: "Editorial masonry with hover intelligence overlays.",
+        preview: "from-cyan-400/30 via-indigo-400/25 to-slate-900"
+      },
+      {
+        id: "time-capsule",
+        name: "Time Capsule Timeline",
+        tagline: "Chronological day-to-night storytelling in 12-hour format.",
+        preview: "from-amber-300/30 via-orange-500/25 to-slate-900"
+      },
+      {
+        id: "cinema-focus",
+        name: "Cinema Focus",
+        tagline: "Large frame cards with dramatic metadata reveals.",
+        preview: "from-fuchsia-300/30 via-indigo-500/25 to-slate-900"
+      },
+      {
+        id: "atlas-cluster",
+        name: "Atlas Cluster",
+        tagline: "Location-first clustered sections with date tracks.",
+        preview: "from-emerald-300/30 via-cyan-500/25 to-slate-900"
+      },
+      {
+        id: "story-strip",
+        name: "Story Strip",
+        tagline: "Filmstrip-inspired horizontal reels grouped by day.",
+        preview: "from-violet-300/30 via-purple-500/20 to-slate-900"
+      }
+    ];
+
+    const state = {
+      view: "home",
+      files: [],
+      isProcessing: false,
+      selectedStyle: "nebula-mosaic",
+      models: { mobilenet: null, coco: null },
+      objectUrls: [],
+      rawAssets: [],
+      uniqueAssets: [],
+      duplicates: [],
+      clusterMap: new Map(),
+      dayBuckets: new Map(),
+      stats: {
+        analyzed: 0,
+        merged: 0,
+        totalPersons: 0,
+        clusters: 0
+      }
+    };
+
+    const pipelineModel = [
+      "Validate Input",
+      "Load AI Models",
+      "Extract EXIF + Visual Signals",
+      "Merge Duplicates",
+      "Cluster by Date + Location",
+      "Render Cinematic Interface"
+    ];
+
+    const sceneAliases = [
+      "beach", "mountain", "forest", "street", "city", "snow", "desert", "park", "indoor", "outdoor", "room", "restaurant", "office", "sky", "ocean", "river", "lake", "building", "bridge", "temple"
+    ];
+
+    function initApp() {
+      applySavedTheme();
+      renderStyleCards();
+      renderStyleSwitcher();
+      renderPipelineSteps();
+      bindEvents();
+      lucide.createIcons();
+      window.addEventListener("beforeunload", cleanupObjectUrls);
+    }
+
+    function bindEvents() {
+      document.getElementById("theme-btn").addEventListener("click", toggleTheme);
+      document.getElementById("back-btn").addEventListener("click", handleBack);
+    }
+
+    function handleBack() {
+      if (state.isProcessing) return;
+      if (state.view === "style") setView("home");
+      else if (state.view === "processing") setView("style");
+      else if (state.view === "presentation") setView("style");
+    }
+
+    function applySavedTheme() {
+      const saved = localStorage.getItem("theme");
+      if (saved === "light") {
+        document.documentElement.classList.remove("dark");
+      } else {
+        document.documentElement.classList.add("dark");
+      }
+      syncThemeClass();
+    }
+
+    function toggleTheme() {
+      document.documentElement.classList.toggle("dark");
+      localStorage.setItem("theme", document.documentElement.classList.contains("dark") ? "dark" : "light");
+      syncThemeClass();
+    }
+
+    function syncThemeClass() {
+      const isDark = document.documentElement.classList.contains("dark");
+      document.documentElement.classList.toggle("light", !isDark);
+      lucide.createIcons();
+    }
+
+    function setView(viewId) {
+      const current = document.getElementById(`view-${state.view}`);
+      const next = document.getElementById(`view-${viewId}`);
+      if (!current || !next || state.view === viewId) return;
+
+      gsap.to(current, {
+        opacity: 0,
+        y: 12,
+        duration: 0.2,
+        onComplete: () => {
+          current.classList.remove("active");
+          next.classList.add("active");
+          gsap.fromTo(next, { opacity: 0, y: -16 }, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" });
+          state.view = viewId;
+          document.getElementById("back-btn").classList.toggle("hidden", viewId === "home");
+        }
+      });
+    }
+
+    function toast(message, type = "info", timeout = 3200) {
+      const t = document.getElementById("toast");
+      t.textContent = message;
+      t.className = "fixed bottom-5 right-5 z-[100] px-4 py-3 rounded-xl text-sm font-semibold shadow-2xl";
+
+      if (type === "success") t.classList.add("bg-emerald-600", "text-white");
+      else if (type === "error") t.classList.add("bg-rose-600", "text-white");
+      else t.classList.add("bg-slate-900", "text-white", "border", "border-slate-700");
+
+      t.classList.remove("hidden");
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => t.classList.add("hidden"), timeout);
+    }
+
+    async function triggerInput(type) {
+      if (state.isProcessing) return;
+
+      if (type === "folder") {
+        if (!("showDirectoryPicker" in window)) {
+          toast("Folder access not supported in this browser. Switching to image selection.", "info");
+          document.getElementById("file-input").click();
+          return;
+        }
+
+        try {
+          const handle = await window.showDirectoryPicker();
+          state.files = [];
+          await scanFolder(handle);
+          if (!state.files.length) {
+            toast("No image files were found in this folder.", "error");
+            return;
+          }
+          toast(`Folder ingest complete: ${state.files.length} images loaded.`, "success");
+          setView("style");
+        } catch (error) {
+          if (error?.name !== "AbortError") {
+            toast("Unable to read folder. Please try again.", "error");
+          }
+        }
+      } else {
+        document.getElementById("file-input").click();
+      }
+    }
+
+    async function scanFolder(handle) {
+      for await (const entry of handle.values()) {
+        if (entry.kind === "file") {
+          const file = await entry.getFile();
+          if (file.type.startsWith("image/")) state.files.push(file);
+        } else if (entry.kind === "directory") {
+          await scanFolder(entry);
+        }
+      }
+    }
+
+    function handleFileSelection(event) {
+      if (state.isProcessing) return;
+      const selected = Array.from(event.target.files || []).filter((f) => f.type.startsWith("image/"));
+      state.files = selected;
+      if (!selected.length) {
+        toast("Please select one or more image files.", "error");
+        return;
+      }
+      toast(`Selected ${selected.length} images from device.`, "success");
+      setView("style");
+    }
+
+    function renderStyleCards() {
+      const container = document.getElementById("style-grid");
+      container.innerHTML = STYLE_LIBRARY.map((style) => `
+        <button class="style-card text-left rounded-2xl border border-slate-700/70 bg-slate-900/55 hover:bg-slate-900/75 transition p-5 ${state.selectedStyle === style.id ? "active" : ""}" data-style="${style.id}" onclick="selectStyle('${style.id}')">
+          <div class="h-36 rounded-xl bg-gradient-to-br ${style.preview} border border-slate-600/30 mb-4"></div>
+          <div class="flex items-center justify-between gap-3">
+            <h3 class="text-xl font-semibold">${style.name}</h3>
+            <i data-lucide="sparkles" class="w-4 h-4 text-cyan-300"></i>
+          </div>
+          <p class="text-sm text-slate-300 mt-2">${style.tagline}</p>
+          <p class="text-[11px] tracking-[0.18em] uppercase text-cyan-300 mt-4">Launch Presentation</p>
+        </button>
+      `).join("");
+      lucide.createIcons();
+    }
+
+    function selectStyle(styleId) {
+      state.selectedStyle = styleId;
+      renderStyleCards();
+      renderStyleSwitcher();
+      startPipeline();
+    }
+
+    function renderStyleSwitcher() {
+      const switcher = document.getElementById("style-switcher");
+      switcher.innerHTML = STYLE_LIBRARY.map((style) => `
+        <button onclick="switchPresentationStyle('${style.id}')" class="px-3 py-2 rounded-xl text-xs border transition ${state.selectedStyle === style.id ? "border-cyan-300 bg-cyan-400/10 text-cyan-100" : "border-slate-600 hover:bg-slate-800"}">${style.name}</button>
+      `).join("");
+    }
+
+    function renderPipelineSteps() {
+      const holder = document.getElementById("pipeline-steps");
+      holder.innerHTML = pipelineModel.map((step, idx) => `
+        <div class="flex items-center gap-3 opacity-40" id="step-${idx}">
+          <span class="w-2.5 h-2.5 rounded-full bg-cyan-300"></span>
+          <p class="text-sm">${step}</p>
+        </div>
+      `).join("");
+    }
+
+    function updateStep(stepIndex, active = true) {
+      const el = document.getElementById(`step-${stepIndex}`);
+      if (!el) return;
+      el.style.opacity = active ? "1" : "0.4";
+    }
+
+    async function startPipeline() {
+      if (state.isProcessing) return;
+      if (!state.files.length) {
+        toast("Please ingest a folder or select images first.", "error");
+        setView("home");
+        return;
+      }
+
+      resetPipelineState();
+      setView("processing");
+      state.isProcessing = true;
+      logMessage("Pipeline started.", "info");
+
+      try {
+        updateStep(0, true);
+        logMessage(`Validated input set with ${state.files.length} image files.`, "success");
+
+        updatePipelineProgress(5, "Loading AI models", "Loading MobileNet and COCO-SSD locally.");
+        updateStep(1, true);
+        await ensureModelsLoaded();
+        logMessage("AI models ready.", "success");
+
+        updatePipelineProgress(10, "Extracting image intelligence", "Reading EXIF and visual semantics.");
+        updateStep(2, true);
+        state.rawAssets = await analyzeFiles(state.files);
+
+        updatePipelineProgress(70, "Merging duplicate assets", "Applying perceptual-hash similarity checks.");
+        updateStep(3, true);
+        const { uniques, duplicates } = deduplicateAssets(state.rawAssets);
+        state.uniqueAssets = uniques;
+        state.duplicates = duplicates;
+        state.stats.merged = duplicates.length;
+        logMessage(`Duplicate merge complete: ${duplicates.length} files merged.`, "info");
+
+        updatePipelineProgress(80, "Clustering timeline context", "Grouping by date and location context.");
+        updateStep(4, true);
+        clusterAssets(state.uniqueAssets);
+
+        updatePipelineProgress(92, "Rendering cinematic presentation", "Generating selected interface template.");
+        updateStep(5, true);
+        renderPresentation();
+        refreshTopStats();
+
+        updatePipelineProgress(100, "Pipeline complete", "Presentation mode is ready.");
+        logMessage("Presentation mode ON.", "success");
+        setTimeout(() => {
+          setView("presentation");
+          state.isProcessing = false;
+          toast("Cinematic gallery ready.", "success");
+        }, 500);
+      } catch (error) {
+        state.isProcessing = false;
+        console.error(error);
+        toast("Processing failed. Please retry with a smaller set.", "error");
+        logMessage(`Error: ${error.message || "Unknown failure"}`, "error");
+      }
+    }
+
+    function resetPipelineState() {
+      cleanupObjectUrls();
+      state.rawAssets = [];
+      state.uniqueAssets = [];
+      state.duplicates = [];
+      state.clusterMap = new Map();
+      state.dayBuckets = new Map();
+      state.stats = { analyzed: 0, merged: 0, totalPersons: 0, clusters: 0 };
+
+      document.getElementById("process-log").innerHTML = "";
+      document.getElementById("progress-bar").style.width = "0%";
+      document.getElementById("progress-text").textContent = "0%";
+      document.getElementById("processing-title").textContent = "Initializing Pipeline...";
+      document.getElementById("processing-subtitle").textContent = "Preparing models and validating assets.";
+
+      document.getElementById("stat-analyzed").textContent = "0";
+      document.getElementById("stat-merged").textContent = "0";
+      document.getElementById("stat-persons").textContent = "0";
+      document.getElementById("stat-clusters").textContent = "0";
+
+      for (let i = 0; i < pipelineModel.length; i++) updateStep(i, false);
+    }
+
+    function updatePipelineProgress(percent, title, subtitle) {
+      document.getElementById("progress-bar").style.width = `${percent}%`;
+      document.getElementById("progress-text").textContent = `${percent}%`;
+      document.getElementById("processing-title").textContent = title;
+      document.getElementById("processing-subtitle").textContent = subtitle;
+    }
+
+    async function ensureModelsLoaded() {
+      if (state.models.mobilenet && state.models.coco) return;
+      [state.models.mobilenet, state.models.coco] = await Promise.all([
+        mobilenet.load(),
+        cocoSsd.load({ base: "lite_mobilenet_v2" })
+      ]);
+    }
+
+    async function analyzeFiles(files) {
+      const results = [];
+      const batchSize = 3;
+
+      for (let i = 0; i < files.length; i += batchSize) {
+        const batch = files.slice(i, i + batchSize);
+        const analyzedBatch = await Promise.all(batch.map((file, batchIndex) => analyzeSingleFile(file, i + batchIndex + 1, files.length)));
+
+        for (const asset of analyzedBatch) {
+          if (!asset) continue;
+          results.push(asset);
+          state.stats.analyzed += 1;
+          state.stats.totalPersons += asset.personCount;
+        }
+
+        const progress = 10 + Math.round((results.length / files.length) * 58);
+        updatePipelineProgress(progress, "Extracting image intelligence", `Analyzed ${results.length} of ${files.length} assets.`);
+        updateProcessingStats();
+      }
+
+      logMessage(`Image analysis complete. ${results.length} assets produced metadata and vision context.`, "success");
+      return results;
+    }
+
+    async function analyzeSingleFile(file, position, total) {
+      try {
+        const tags = await safeReadExif(file);
+        const capturedAt = extractTimestamp(tags, file.lastModified);
+        const url = URL.createObjectURL(file);
+        state.objectUrls.push(url);
+
+        const inference = await inferVisualSignals(url);
+        const hash = await computeDHash(url);
+        const location = extractLocation(tags, inference.sceneTags);
+
+        const asset = {
+          id: cryptoRandomId(),
+          name: file.name,
+          size: file.size,
+          mimeType: file.type,
+          url,
+          timestamp: capturedAt.getTime(),
+          dateLabel: formatDate(capturedAt),
+          dateKey: formatDateKey(capturedAt),
+          timeLabel: formatTime12(capturedAt),
+          minuteIndex: capturedAt.getHours() * 60 + capturedAt.getMinutes(),
+          locationLabel: location.label,
+          locationKey: location.key,
+          latitude: location.latitude,
+          longitude: location.longitude,
+          personCount: inference.personCount,
+          scene: inference.scenePrimary,
+          sceneTags: inference.sceneTags,
+          objects: inference.objects,
+          hash,
+          duplicateOf: null,
+          duplicateScore: null
+        };
+
+        logMessage(`[${position}/${total}] ${file.name} | ${asset.timeLabel} | ${asset.locationLabel} | persons: ${asset.personCount}`, "info");
+        return asset;
+      } catch (error) {
+        logMessage(`[${position}/${total}] Failed to analyze ${file.name}: ${error.message}`, "error");
+        return null;
+      }
+    }
+
+    async function safeReadExif(file) {
+      try {
+        return await ExifReader.load(file);
+      } catch {
+        return {};
+      }
+    }
+
+    function extractTimestamp(tags, fallbackMs) {
+      const candidates = [
+        tags?.DateTimeOriginal?.description,
+        tags?.DateTime?.description,
+        tags?.CreateDate?.description
+      ].filter(Boolean);
+
+      for (const value of candidates) {
+        const date = parseExifDateString(value);
+        if (date) return date;
+      }
+
+      return new Date(fallbackMs || Date.now());
+    }
+
+    function parseExifDateString(value) {
+      if (typeof value !== "string") return null;
+      const match = value.match(/(\d{4})[:\-](\d{2})[:\-](\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/);
+      if (!match) return null;
+      const [, yy, mm, dd, hh, min, sec = "00"] = match;
+      const d = new Date(Number(yy), Number(mm) - 1, Number(dd), Number(hh), Number(min), Number(sec));
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    async function inferVisualSignals(url) {
+      const image = await loadImage(url);
+      const [classification, detections] = await Promise.all([
+        state.models.mobilenet.classify(image),
+        state.models.coco.detect(image)
+      ]);
+
+      const sceneTags = (classification || []).slice(0, 3).map((item) => item.className);
+      const scenePrimary = sceneTags[0] || "unclassified";
+      const objects = (detections || []).map((item) => item.class);
+      const personCount = (detections || []).filter((item) => item.class === "person").length;
+
+      return { scenePrimary, sceneTags, objects, personCount };
+    }
+
+    function loadImage(url) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = url;
+      });
+    }
+
+    function extractLocation(tags, sceneTags) {
+      const latTag = tags?.GPSLatitude;
+      const lonTag = tags?.GPSLongitude;
+      const latDesc = latTag?.description;
+      const lonDesc = lonTag?.description;
+
+      if (latDesc && lonDesc) {
+        const latNum = parseCoordinate(latDesc);
+        const lonNum = parseCoordinate(lonDesc);
+        const roundedLat = Number.isFinite(latNum) ? latNum.toFixed(2) : null;
+        const roundedLon = Number.isFinite(lonNum) ? lonNum.toFixed(2) : null;
+
+        return {
+          key: roundedLat && roundedLon ? `${roundedLat},${roundedLon}` : `${latDesc}|${lonDesc}`,
+          label: roundedLat && roundedLon ? `Geo ${roundedLat}, ${roundedLon}` : "Geo-tagged",
+          latitude: Number.isFinite(latNum) ? latNum : null,
+          longitude: Number.isFinite(lonNum) ? lonNum : null
+        };
+      }
+
+      const scene = (sceneTags || []).join(" ").toLowerCase();
+      const match = sceneAliases.find((keyword) => scene.includes(keyword));
+      const sceneLabel = match ? `${capitalize(match)} Context` : "Local Context";
+
+      return {
+        key: `scene:${sceneLabel}`,
+        label: sceneLabel,
+        latitude: null,
+        longitude: null
+      };
+    }
+
+    function parseCoordinate(text) {
+      const nums = String(text).match(/-?\d+(?:\.\d+)?/g);
+      if (!nums || !nums.length) return NaN;
+      if (nums.length === 1) return Number(nums[0]);
+
+      const deg = Number(nums[0]) || 0;
+      const min = Number(nums[1]) || 0;
+      const sec = Number(nums[2]) || 0;
+      const sign = /[SW-]/i.test(text) ? -1 : 1;
+      return sign * (Math.abs(deg) + min / 60 + sec / 3600);
+    }
+
+    async function computeDHash(url) {
+      const img = await loadImage(url);
+      const canvas = document.createElement("canvas");
+      canvas.width = 9;
+      canvas.height = 8;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(img, 0, 0, 9, 8);
+      const { data } = ctx.getImageData(0, 0, 9, 8);
+
+      let bits = "";
+      for (let y = 0; y < 8; y++) {
+        for (let x = 0; x < 8; x++) {
+          const left = grayscaleAt(data, x, y, 9);
+          const right = grayscaleAt(data, x + 1, y, 9);
+          bits += left > right ? "1" : "0";
+        }
+      }
+
+      return bits;
+    }
+
+    function grayscaleAt(data, x, y, width) {
+      const i = (y * width + x) * 4;
+      return data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+    }
+
+    function deduplicateAssets(assets) {
+      const ordered = [...assets].sort((a, b) => a.timestamp - b.timestamp);
+      const uniques = [];
+      const duplicates = [];
+
+      for (const asset of ordered) {
+        let match = null;
+
+        for (const existing of uniques) {
+          const distance = hammingDistance(asset.hash, existing.hash);
+          const sizeRatio = Math.min(asset.size, existing.size) / Math.max(asset.size, existing.size);
+
+          if (distance <= 6 && sizeRatio > 0.75) {
+            match = { existing, distance };
+            break;
+          }
+        }
+
+        if (match) {
+          asset.duplicateOf = match.existing.id;
+          asset.duplicateScore = match.distance;
+          duplicates.push(asset);
+        } else {
+          uniques.push(asset);
+        }
+      }
+
+      return { uniques, duplicates };
+    }
+
+    function hammingDistance(a, b) {
+      if (!a || !b || a.length !== b.length) return 64;
+      let d = 0;
+      for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) d++;
+      return d;
+    }
+
+    function clusterAssets(assets) {
+      const clusterMap = new Map();
+      const dayBuckets = new Map();
+
+      assets.sort((a, b) => a.timestamp - b.timestamp);
+
+      for (const asset of assets) {
+        const clusterId = `${asset.dateKey}::${asset.locationKey}`;
+
+        if (!clusterMap.has(clusterId)) {
+          clusterMap.set(clusterId, {
+            id: clusterId,
+            dateKey: asset.dateKey,
+            dateLabel: asset.dateLabel,
+            locationLabel: asset.locationLabel,
+            assets: []
+          });
+        }
+        clusterMap.get(clusterId).assets.push(asset);
+
+        if (!dayBuckets.has(asset.dateKey)) {
+          dayBuckets.set(asset.dateKey, {
+            dateKey: asset.dateKey,
+            dateLabel: asset.dateLabel,
+            assets: []
+          });
+        }
+        dayBuckets.get(asset.dateKey).assets.push(asset);
+      }
+
+      for (const bucket of dayBuckets.values()) {
+        bucket.assets.sort((a, b) => a.minuteIndex - b.minuteIndex);
+      }
+
+      state.clusterMap = clusterMap;
+      state.dayBuckets = dayBuckets;
+      state.stats.clusters = clusterMap.size;
+      updateProcessingStats();
+    }
+
+    function renderPresentation() {
+      const container = document.getElementById("presentation-container");
+      const style = state.selectedStyle;
+      const assets = state.uniqueAssets;
+
+      if (!assets.length) {
+        container.innerHTML = `<div class="rounded-2xl border border-slate-700 p-12 text-center text-slate-300">No assets available for presentation.</div>`;
+        return;
+      }
+
+      if (style === "nebula-mosaic") container.innerHTML = renderMosaic(assets);
+      if (style === "time-capsule") container.innerHTML = renderTimeline();
+      if (style === "cinema-focus") container.innerHTML = renderCinema(assets);
+      if (style === "atlas-cluster") container.innerHTML = renderAtlas();
+      if (style === "story-strip") container.innerHTML = renderStoryStrip();
+
+      document.getElementById("presentation-summary").textContent = `${state.uniqueAssets.length} curated images • ${state.duplicates.length} duplicates merged • ${state.stats.clusters} clusters generated`;
+      animatePresentation();
+    }
+
+    function renderMosaic(assets) {
+      return `
+        <div class="masonry">
+          ${assets.map((asset) => `
+            <article class="masonry-item group relative overflow-hidden rounded-2xl border border-slate-700/50 bg-slate-900/70">
+              <img src="${asset.url}" alt="${escapeHtml(asset.name)}" loading="lazy" class="w-full object-cover group-hover:scale-105 transition duration-700" />
+              <div class="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-slate-950/95 to-transparent">
+                <p class="text-[11px] uppercase tracking-[0.18em] text-cyan-300">${asset.dateLabel} • ${asset.timeLabel}</p>
+                <h3 class="font-semibold text-white mt-1">${asset.locationLabel}</h3>
+                <p class="text-xs text-slate-300 mt-1">Persons: ${asset.personCount} • Scene: ${asset.scene}</p>
+              </div>
+            </article>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function renderTimeline() {
+      const days = Array.from(state.dayBuckets.values()).sort((a, b) => a.dateKey.localeCompare(b.dateKey));
+
+      return `
+        <div class="space-y-10">
+          ${days.map((day) => `
+            <section>
+              <h3 class="text-2xl font-bold mb-4">${day.dateLabel}</h3>
+              <div class="relative timeline-line space-y-5 pl-8">
+                ${day.assets.map((asset) => `
+                  <article class="rounded-xl border border-slate-700/70 bg-slate-900/65 p-4 md:p-5">
+                    <div class="grid md:grid-cols-[260px_1fr] gap-4 items-center">
+                      <img src="${asset.url}" alt="${escapeHtml(asset.name)}" loading="lazy" class="w-full h-48 md:h-40 object-cover rounded-lg" />
+                      <div>
+                        <p class="text-xs uppercase tracking-[0.2em] text-cyan-300">${asset.timeLabel}</p>
+                        <h4 class="text-lg font-semibold mt-1">${asset.locationLabel}</h4>
+                        <p class="text-sm text-slate-300 mt-2">Scene: ${asset.scene} • Persons: ${asset.personCount}</p>
+                        <p class="text-xs text-slate-400 mt-2">Objects: ${asset.objects.slice(0, 4).join(", ") || "n/a"}</p>
+                      </div>
+                    </div>
+                  </article>
+                `).join("")}
+              </div>
+            </section>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function renderCinema(assets) {
+      return `
+        <div class="grid lg:grid-cols-2 gap-6">
+          ${assets.map((asset, idx) => `
+            <article class="group rounded-2xl overflow-hidden border border-slate-700/60 bg-slate-950/70">
+              <div class="relative overflow-hidden">
+                <img src="${asset.url}" alt="${escapeHtml(asset.name)}" loading="lazy" class="w-full h-[320px] object-cover group-hover:scale-110 transition duration-[1400ms]" />
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
+                <div class="absolute bottom-0 left-0 right-0 p-5">
+                  <p class="text-xs uppercase tracking-[0.22em] text-cyan-200">Frame ${idx + 1} • ${asset.timeLabel}</p>
+                  <h3 class="text-2xl font-bold mt-1">${asset.scene}</h3>
+                  <p class="text-sm text-slate-200 mt-1">${asset.locationLabel} • ${asset.dateLabel}</p>
+                </div>
+              </div>
+              <div class="p-4 border-t border-slate-700/60 flex flex-wrap gap-2 text-xs">
+                <span class="px-2 py-1 rounded-full bg-slate-800 border border-slate-600">Persons: ${asset.personCount}</span>
+                ${asset.sceneTags.map((tag) => `<span class="px-2 py-1 rounded-full bg-indigo-500/20 border border-indigo-300/30">${tag}</span>`).join("")}
+              </div>
+            </article>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function renderAtlas() {
+      const clusters = Array.from(state.clusterMap.values()).sort((a, b) => a.dateKey.localeCompare(b.dateKey));
+
+      return `
+        <div class="space-y-8">
+          ${clusters.map((cluster) => `
+            <section class="rounded-2xl border border-slate-700/60 bg-slate-900/55 p-5">
+              <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div>
+                  <p class="text-xs uppercase tracking-[0.2em] text-cyan-300">${cluster.dateLabel}</p>
+                  <h3 class="text-xl font-bold">${cluster.locationLabel}</h3>
+                </div>
+                <span class="text-xs px-3 py-1 rounded-full border border-cyan-300/40 bg-cyan-400/10">${cluster.assets.length} images</span>
+              </div>
+              <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+                ${cluster.assets.map((asset) => `
+                  <article class="rounded-xl overflow-hidden border border-slate-700/70 bg-slate-950/65">
+                    <img src="${asset.url}" alt="${escapeHtml(asset.name)}" loading="lazy" class="w-full h-52 object-cover" />
+                    <div class="p-3">
+                      <p class="text-xs text-cyan-300 tracking-[0.2em] uppercase">${asset.timeLabel}</p>
+                      <p class="text-sm mt-1">Persons ${asset.personCount} • ${asset.scene}</p>
+                    </div>
+                  </article>
+                `).join("")}
+              </div>
+            </section>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function renderStoryStrip() {
+      const days = Array.from(state.dayBuckets.values()).sort((a, b) => a.dateKey.localeCompare(b.dateKey));
+
+      return `
+        <div class="space-y-8">
+          ${days.map((day) => `
+            <section>
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-xl font-bold">${day.dateLabel}</h3>
+                <span class="text-xs px-2 py-1 rounded-full border border-slate-600">${day.assets.length} frames</span>
+              </div>
+              <div class="overflow-x-auto pb-2">
+                <div class="flex gap-3 min-w-max">
+                  ${day.assets.map((asset) => `
+                    <article class="w-[250px] rounded-xl overflow-hidden border border-slate-700/70 bg-slate-900/70">
+                      <img src="${asset.url}" alt="${escapeHtml(asset.name)}" loading="lazy" class="w-full h-44 object-cover" />
+                      <div class="p-3">
+                        <p class="text-xs uppercase tracking-[0.2em] text-indigo-300">${asset.timeLabel}</p>
+                        <p class="text-sm mt-1 line-clamp-2">${asset.locationLabel}</p>
+                        <p class="text-xs text-slate-400 mt-2">${asset.scene}</p>
+                      </div>
+                    </article>
+                  `).join("")}
+                </div>
+              </div>
+            </section>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function animatePresentation() {
+      const cards = document.querySelectorAll("#presentation-container article, #presentation-container section");
+      gsap.from(cards, {
+        opacity: 0,
+        y: 24,
+        duration: 0.7,
+        stagger: 0.04,
+        ease: "power3.out"
+      });
+    }
+
+    function switchPresentationStyle(styleId) {
+      state.selectedStyle = styleId;
+      renderStyleSwitcher();
+      renderPresentation();
+    }
+
+    function updateProcessingStats() {
+      document.getElementById("stat-analyzed").textContent = String(state.stats.analyzed);
+      document.getElementById("stat-merged").textContent = String(state.stats.merged);
+      document.getElementById("stat-persons").textContent = String(state.stats.totalPersons);
+      document.getElementById("stat-clusters").textContent = String(state.stats.clusters);
+    }
+
+    function refreshTopStats() {
+      document.getElementById("top-assets").textContent = `${state.uniqueAssets.length} assets`;
+      document.getElementById("top-duplicates").textContent = `${state.duplicates.length} merged`;
+      document.getElementById("top-clusters").textContent = `${state.stats.clusters} clusters`;
+    }
+
+    function logMessage(text, kind = "info") {
+      const log = document.getElementById("process-log");
+      const stamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true });
+      const color = kind === "error" ? "text-rose-300" : kind === "success" ? "text-emerald-300" : "text-slate-200";
+      log.insertAdjacentHTML("beforeend", `<div class="${color}">[${stamp}] ${escapeHtml(text)}</div>`);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function cleanupObjectUrls() {
+      for (const url of state.objectUrls) URL.revokeObjectURL(url);
+      state.objectUrls = [];
+    }
+
+    function cryptoRandomId() {
+      if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+      return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    }
+
+    function formatDate(date) {
+      return date.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+    }
+
+    function formatDateKey(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function formatTime12(date) {
+      return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
+    }
+
+    function capitalize(value) {
+      return value.charAt(0).toUpperCase() + value.slice(1);
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll("\"", "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    initApp();
+  </script>
+</body>
+</html>
