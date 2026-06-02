@@ -1,22 +1,48 @@
 # Nebula
 
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+Nebula is a cinematic AI-assisted memory gallery for ingesting local images,
+generating metadata, organizing timelines, detecting duplicates, and sharing
+curated gallery views.
 
-# Run and deploy your AI Studio app
+## Features
 
-This contains everything you need to run your app locally.
+- Local image ingestion through file and folder selection.
+- Gemini-powered image categorization and caption generation.
+- Client-side fallback processing when the API proxy is unavailable.
+- Timeline, category, location, date, and duplicate-aware gallery views.
+- Optional Firebase sync and shared gallery routes.
 
-View your app in AI Studio: https://ai.studio/apps/b6eb8df4-bd7c-4af5-86d7-f490bef2813c
+## Prerequisites
+
+- Node.js 20 or newer.
+- A Gemini API key for server-side image analysis.
 
 ## Run Locally
 
-**Prerequisites:**  Node.js
-
-
 1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+   ```bash
+   npm install
+   ```
+
+2. Create `.env.local` and add:
+   ```bash
+   GEMINI_API_KEY="your_gemini_api_key"
+   APP_URL="http://localhost:3000"
+   ```
+
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+4. Open `http://localhost:3000`.
+
+## Build
+
+```bash
+npm run build
+npm run start
+```
+
+The production build emits the client bundle and compiled Express server into
+`dist/`.

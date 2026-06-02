@@ -8,6 +8,7 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
+import { rateLimit } from "express-rate-limit";
 
 // Load environment variables
 dotenv.config();
@@ -25,13 +26,21 @@ function getGeminiClient(): GoogleGenAI {
       apiKey: key,
       httpOptions: {
         headers: {
-          "User-Agent": "aistudio-build",
+          "User-Agent": "nebula-server",
         },
       },
     });
   }
   return aiClient;
 }
+
+const analyzeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per 15 minutes
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many analysis requests from this IP, please try again later." }
+});
 
 async function startServer() {
   const app = express();
@@ -47,7 +56,7 @@ async function startServer() {
   });
 
   // API route for real-time image intelligence analysis using Gemini 3.5 Flash
-  app.post("/api/analyze", async (req, res) => {
+  app.post("/api/analyze", analyzeLimiter, async (req, res) => {
     try {
       const { base64, mimeType } = req.body;
 
@@ -55,14 +64,21 @@ async function startServer() {
         return res.status(400).json({ error: "Missing required fields: base64, mimeType" });
       }
 
+      // Check allowed standard image formats (jpeg, png, webp)
+      const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp"];
+      if (!allowedMimeTypes.includes(mimeType)) {
+        return res.status(400).json({ error: `Unsupported image format (${mimeType}). Only jpeg, png, and webp are allowed.` });
+      }
+
       // Check key state before trying to call Google Gen AI
       let ai;
       try {
         ai = getGeminiClient();
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
         return res.status(400).json({
           error: "Gemini API key is not configured.",
-          message: err.message,
+          message: errorMsg,
           needSecretsConfig: true
         });
       }
@@ -128,11 +144,12 @@ async function startServer() {
 
       const parsedData = JSON.parse(responseText.trim());
       res.json(parsedData);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Analysis Error:", error);
+      const errMsg = error instanceof Error ? error.message : String(error);
       res.status(500).json({
         error: "Failed to recognize and categorize image metadata",
-        details: error.message || error,
+        details: errMsg,
       });
     }
   });

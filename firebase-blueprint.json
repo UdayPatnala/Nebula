@@ -1,0 +1,153 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User account registration and preferences schema",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Unique user authentication identifier matching the Auth UID"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Primary verified email address"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Decorative user display name"
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "Secure reference to user avatar URL"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "UTC timestamp indicating profile creation time"
+        }
+      },
+      "required": ["uid", "email", "createdAt"]
+    },
+    "Memory": {
+      "title": "Nebula Memory Meta",
+      "description": "Analysis metadata for an ingested chronological memory item",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique client-side generated identifier"
+        },
+        "fileKey": {
+          "type": "string",
+          "description": "Key composed of size-lastModified-name used for local mapping"
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name of the image metadata file"
+        },
+        "size": {
+          "type": "integer",
+          "description": "Size in bytes"
+        },
+        "timestamp": {
+          "type": "integer",
+          "description": "Numeric file modification epoch timestamp"
+        },
+        "dateStr": {
+          "type": "string",
+          "description": "Formatted date string YYYY-MM-DD"
+        },
+        "time12h": {
+          "type": "string",
+          "description": "Human-friendly 12h representation e.g. 02:14 PM"
+        },
+        "hour24": {
+          "type": "number",
+          "description": "24h standard parsed location in day timeline for sorted views"
+        },
+        "caption": {
+          "type": "string",
+          "description": "AI or locally generated cinematic caption translation"
+        },
+        "category": {
+          "type": "string",
+          "description": "Memory category (e.g. Travel, Portrait, Food, Nature)"
+        },
+        "location": {
+          "type": "string",
+          "description": "Primary background setting location string"
+        },
+        "peopleCount": {
+          "type": "integer",
+          "description": "Number of human count detected in the memory"
+        },
+        "colorPalette": {
+          "type": "array",
+          "description": "Exactly three color palette hex codes"
+        },
+        "syncedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "UTC timestamp of the synchronization event"
+        }
+      },
+      "required": [
+        "id",
+        "fileKey",
+        "name",
+        "size",
+        "timestamp",
+        "dateStr",
+        "time12h",
+        "hour24",
+        "caption",
+        "category",
+        "location",
+        "peopleCount",
+        "colorPalette",
+        "syncedAt"
+      ]
+    },
+    "SharedGallery": {
+      "title": "Shared Gallery Catalog",
+      "description": "Public shareable memory timeline mapping processed images and styles",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique shared catalog alphanumeric identifier"
+        },
+        "style": {
+          "type": "string",
+          "description": "Selected presentation display layout"
+        },
+        "images": {
+          "type": "array",
+          "description": "List of catalog objects with public remote storage download URLs"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp of this public record"
+        }
+      },
+      "required": ["id", "style", "images", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Individual account nodes mapped to authenticated active users"
+    },
+    "/users/{userId}/memories/{memoryId}": {
+      "schema": "Memory",
+      "description": "Synchronized personal memory logs and image analysis maps"
+    },
+    "/shared_galleries/{galleryId}": {
+      "schema": "SharedGallery",
+      "description": "Shared timeline maps with remote image urls"
+    }
+  }
+}

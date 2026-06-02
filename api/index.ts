@@ -20,7 +20,7 @@ function getGeminiClient(): GoogleGenAI {
       apiKey: key,
       httpOptions: {
         headers: {
-          "User-Agent": "aistudio-build-vercel",
+          "User-Agent": "nebula-vercel-api",
         },
       },
     });

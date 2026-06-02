@@ -1,0 +1,111 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Safety Net (Pillar 1)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Common helper functions (Pillar 3)
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+    
+    function incoming() { 
+      return request.resource.data; 
+    }
+    
+    function existing() { 
+      return resource.data; 
+    }
+    
+    function isSignedIn() { 
+      return request.auth != null; 
+    }
+
+    // Verified users only (Security Mandate)
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Entity validator: User Profile (Pillar 2)
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'createdAt'])
+        && data.keys().size() <= 5
+        && data.uid == request.auth.uid
+        && data.uid is string && data.uid.size() <= 128
+        && data.email is string && data.email.size() <= 256
+        && (data.get('displayName', '') is string && data.get('displayName', '').size() <= 128)
+        && (data.get('photoURL', '') is string && data.get('photoURL', '').size() <= 1024);
+    }
+
+    // Entity validator: Memories (Pillar 2, 5)
+    function isValidMemory(data) {
+      return data.keys().hasAll([
+          'id', 'fileKey', 'name', 'size', 'timestamp', 
+          'dateStr', 'time12h', 'hour24', 'caption', 
+          'category', 'location', 'peopleCount', 'colorPalette', 'syncedAt'
+        ])
+        && data.keys().size() <= 14
+        && data.id is string && data.id.size() <= 128
+        && data.fileKey is string && data.fileKey.size() <= 256
+        && data.name is string && data.name.size() <= 256
+        && data.size is int && data.size >= 0
+        && data.timestamp is int && data.timestamp > 0
+        && data.dateStr is string && data.dateStr.size() <= 32
+        && data.time12h is string && data.time12h.size() <= 32
+        && (data.hour24 is int || data.hour24 is float)
+        && data.caption is string && data.caption.size() <= 1024
+        && data.category is string && data.category.size() <= 128
+        && data.location is string && data.location.size() <= 128
+        && data.peopleCount is int && data.peopleCount >= 0
+        && data.colorPalette is list && data.colorPalette.size() == 3
+        && data.colorPalette[0] is string && data.colorPalette[0].size() <= 16
+        && data.colorPalette[1] is string && data.colorPalette[1].size() <= 16
+        && data.colorPalette[2] is string && data.colorPalette[2].size() <= 16;
+    }
+
+    // Entity validator: Shared Gallery (Pillar 2)
+    function isValidSharedGallery(data) {
+      return data.keys().hasAll(['id', 'style', 'images', 'createdAt'])
+        && data.keys().size() == 4
+        && data.id is string && data.id.size() <= 128
+        && data.style is string && data.style.size() <= 32
+        && data.images is list && data.images.size() <= 150;
+    }
+
+    // Match patterns (Pillar 6)
+    match /users/{userId} {
+      allow create: if isVerifiedUser() && isOwner(userId) && isValidUser(incoming()) && incoming().createdAt == request.time;
+      allow update: if isVerifiedUser() && isOwner(userId) && isValidUser(incoming()) && incoming().createdAt == existing().createdAt;
+      allow get: if isVerifiedUser() && isOwner(userId);
+      allow list: if false; // Blanket user profiling blocked
+      
+      // Personal subcollection of memories (Pillar 8)
+      match /memories/{memoryId} {
+        allow get: if isVerifiedUser() && isOwner(userId) && isValidId(memoryId);
+        allow list: if isVerifiedUser() && isOwner(userId); // Enforces secure user queries (only owner)
+        
+        allow create: if isVerifiedUser() && isOwner(userId) && isValidId(memoryId) && isValidMemory(incoming()) && incoming().syncedAt == request.time;
+        
+        // Updates require maintaining immutable identifiers (Pillar 4)
+        allow update: if isVerifiedUser() && isOwner(userId) && isValidId(memoryId) && isValidMemory(incoming())
+          && incoming().syncedAt == request.time
+          && incoming().id == existing().id
+          && incoming().fileKey == existing().fileKey;
+          
+        allow delete: if isVerifiedUser() && isOwner(userId) && isValidId(memoryId);
+      }
+    }
+
+    match /shared_galleries/{galleryId} {
+      allow get: if isValidId(galleryId);
+      allow create: if isValidId(galleryId) && isValidSharedGallery(incoming()) && incoming().createdAt == request.time;
+    }
+  }
+}

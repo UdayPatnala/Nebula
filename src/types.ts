@@ -6,6 +6,7 @@
 export interface ImageItem {
   id: string;
   url: string; // Object URL or static URL
+  fileKey?: string; // Cache lookup key (size-lastModified-name)
   name: string;
   size: number;
   timestamp: number;
