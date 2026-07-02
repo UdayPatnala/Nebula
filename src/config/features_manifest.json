@@ -1,0 +1,80 @@
+{
+  "project": "Nebula",
+  "version": "1.0.0",
+  "roles": {
+    "visitor": {
+      "permissions": ["view_public_galleries", "view_photos", "view_videos", "navigate_stories", "search_inside_galleries", "download_permitted_media", "share_links", "switch_theme"]
+    },
+    "registered_user": {
+      "permissions": ["register", "login", "verify_email", "reset_password", "upload_media", "create_projects", "delete_projects", "archive_projects", "configure_gallery_settings", "preview_galleries", "generate_galleries", "manage_credits", "view_analytics"]
+    },
+    "premium_user": {
+      "permissions": ["higher_upload_limits", "larger_storage_quota", "priority_ai_processing", "premium_themes", "custom_branding", "advanced_analytics", "password_protect_galleries", "gallery_expiration_controls", "watermark_controls"]
+    },
+    "administrator": {
+      "permissions": ["unrestricted_access", "user_management", "credit_management", "project_moderation", "theme_management", "ai_model_management", "view_audit_logs", "health_monitoring", "backup_management"]
+    }
+  },
+  "modules": [
+    {
+      "id": "auth",
+      "name": "Authentication & Session Management",
+      "status": "pending",
+      "features": ["sign_up", "login", "logout", "forgot_password", "reset_password", "email_verification", "session_retention", "multi_device_sessions"]
+    },
+    {
+      "id": "landing_page",
+      "name": "Public Landing Page",
+      "status": "pending",
+      "features": ["hero", "features_overview", "how_it_works", "ai_capabilities_showcase", "gallery_showcase", "pricing_plans", "faq_accordion"]
+    },
+    {
+      "id": "dashboard",
+      "name": "User Dashboard",
+      "status": "pending",
+      "features": ["recent_projects", "continue_editing", "credit_balance", "daily_rewards", "notification_bell", "storage_usage_indicator"]
+    },
+    {
+      "id": "media_upload",
+      "name": "Media Upload Pipeline",
+      "status": "pending",
+      "features": ["drag_and_drop", "folder_upload", "file_validation", "upload_progress_bars", "pause_resume_upload", "cancel_upload"]
+    },
+    {
+      "id": "project_management",
+      "name": "Project Management",
+      "status": "pending",
+      "features": ["create_project", "rename_project", "delete_project", "archive_project", "restore_project", "search_projects"]
+    },
+    {
+      "id": "ai_pipeline",
+      "name": "AI Processing Pipeline",
+      "status": "pending",
+      "features": ["object_detection", "scene_recognition", "face_grouping", "semantic_labeling", "storyboard_generation"]
+    },
+    {
+      "id": "gallery_builder",
+      "name": "Interactive Gallery Builder",
+      "status": "pending",
+      "features": ["theme_selection", "layout_customization", "background_music", "animation_presets", "live_preview", "publish_gallery"]
+    },
+    {
+      "id": "public_gallery",
+      "name": "Public Gallery Experience",
+      "status": "pending",
+      "features": ["responsive_storytelling_view", "media_slideshow", "ambient_music_player", "semantic_search", "metadata_display", "direct_download"]
+    },
+    {
+      "id": "credit_system",
+      "name": "Credits & Usage System",
+      "status": "pending",
+      "features": ["credit_balance_tracking", "credit_deduction_on_processing", "daily_checkin_rewards", "credit_purchase_flows"]
+    },
+    {
+      "id": "admin_dashboard",
+      "name": "Admin Dashboard",
+      "status": "pending",
+      "features": ["user_lookup", "credit_adjustment", "gallery_moderation", "ai_performance_metrics", "system_health_status"]
+    }
+  ]
+}

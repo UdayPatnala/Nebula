@@ -1,0 +1,681 @@
+# Nebula
+
+# Software Requirements Specification (SRS)
+
+## Version 1.0
+
+---
+
+# Section 19 — Media Storage, File Management, CDN & Asset Delivery Architecture
+
+> **Objective**
+>
+> This section defines Nebula's complete media storage architecture. It specifies how images, videos, thumbnails, previews, AI-generated assets, gallery files, and static resources are stored, versioned, optimized, secured, cached, delivered, archived, and deleted. The storage system must remain highly available, cost-efficient, scalable, and optimized for fast global content delivery.
+
+---
+
+# 19.1 Storage Philosophy
+
+Nebula is a **media-intensive platform**.
+
+The storage system must prioritize:
+
+* Durability
+* Performance
+* Scalability
+* Cost efficiency
+* Security
+* Reliability
+* Recoverability
+* Global accessibility
+* Future extensibility
+
+Binary media files should **never** be stored directly inside the primary relational database except for exceptional cases explicitly justified by design.
+
+---
+
+# 19.2 Storage Architecture
+
+```text id="l8k2rf"
+User Upload
+
+↓
+
+Upload Gateway
+
+↓
+
+Validation
+
+↓
+
+Object Storage
+
+↓
+
+AI Processing
+
+↓
+
+Optimization Pipeline
+
+↓
+
+Thumbnail Generation
+
+↓
+
+CDN Distribution
+
+↓
+
+Public Gallery
+
+↓
+
+Analytics
+```
+
+The storage layer should remain independent from AI processing and gallery rendering.
+
+---
+
+# 19.3 Storage Layers
+
+Nebula should organize storage into multiple logical layers.
+
+## Original Media
+
+Contains:
+
+* Original images
+* Original videos
+* Original filenames
+* Original quality
+
+Original media should remain immutable after successful upload.
+
+---
+
+## Optimized Media
+
+Contains:
+
+* Compressed images
+* Optimized videos
+* Device-specific variants
+* Responsive image versions
+
+Optimized assets improve gallery performance without altering originals.
+
+---
+
+## Generated Assets
+
+Includes:
+
+* Thumbnails
+* Preview images
+* AI overlays (if applicable)
+* Gallery cover images
+* Blur placeholders
+* Social sharing previews
+
+Generated assets can be regenerated if necessary.
+
+---
+
+## Temporary Storage
+
+Used for:
+
+* Upload staging
+* Processing intermediates
+* Preview generation
+* Failed upload recovery
+
+Temporary assets should be cleaned up automatically.
+
+---
+
+# 19.4 Storage Structure
+
+Logical organization:
+
+```text id="a4n7qh"
+Storage
+
+├── Users
+│
+├── Projects
+│
+├── Originals
+│
+├── Optimized
+│
+├── Thumbnails
+│
+├── Galleries
+│
+├── AI
+│
+├── Temporary
+│
+├── Exports
+│
+└── Backups
+```
+
+Physical implementation may differ, but logical separation should remain.
+
+---
+
+# 19.5 File Upload Pipeline
+
+Upload sequence:
+
+```text id="bb8x1w"
+Upload
+
+↓
+
+Integrity Check
+
+↓
+
+Virus Scan (if enabled)
+
+↓
+
+Metadata Extraction
+
+↓
+
+Storage Allocation
+
+↓
+
+Object Storage
+
+↓
+
+Thumbnail Generation
+
+↓
+
+AI Queue
+
+↓
+
+Ready
+```
+
+Each stage should produce verifiable status updates.
+
+---
+
+# 19.6 Object Storage
+
+Object storage should contain:
+
+Images
+
+Videos
+
+Generated assets
+
+Exports
+
+Archives
+
+Large media should never pass through unnecessary application-layer memory when direct streaming is feasible.
+
+---
+
+# 19.7 Media Versioning
+
+Maintain separate versions where applicable:
+
+Original
+
+Optimized
+
+Thumbnail
+
+Preview
+
+High-resolution
+
+Future AI-enhanced variants
+
+Versioning should avoid overwriting original content.
+
+---
+
+# 19.8 File Naming Strategy
+
+Avoid exposing predictable file names.
+
+Requirements:
+
+* Globally unique identifiers.
+* Non-sequential naming.
+* Collision resistance.
+* Stable references.
+
+Original filenames may be preserved as metadata rather than storage identifiers.
+
+---
+
+# 19.9 Folder Upload Support
+
+Maintain:
+
+Folder hierarchy
+
+Relative paths
+
+Album relationships
+
+Nested directories
+
+Users may choose whether folder structure influences gallery organization.
+
+---
+
+# 19.10 Duplicate Storage Prevention
+
+Detect:
+
+Exact duplicates
+
+Previously uploaded files
+
+Duplicate thumbnails
+
+Redundant optimized assets
+
+Avoid storing identical binary data multiple times when ownership and permissions permit safe deduplication.
+
+---
+
+# 19.11 Thumbnail Generation
+
+Generate multiple thumbnail sizes optimized for:
+
+Mobile
+
+Tablet
+
+Desktop
+
+Gallery grids
+
+Preview cards
+
+Search results
+
+Administrative dashboards
+
+Thumbnails should preserve aspect ratio unless intentionally cropped according to gallery design.
+
+---
+
+# 19.12 Image Optimization
+
+Optimization may include:
+
+Compression
+
+Progressive encoding
+
+Responsive variants
+
+Color profile normalization
+
+Metadata stripping where appropriate for public delivery
+
+Optimization should balance quality and performance.
+
+---
+
+# 19.13 Video Optimization
+
+Generate:
+
+Poster images
+
+Streaming-friendly formats where appropriate
+
+Adaptive quality variants
+
+Preview clips (future)
+
+Optimize delivery without unnecessarily degrading source quality.
+
+---
+
+# 19.14 Lazy Asset Generation
+
+Certain generated assets may be created:
+
+Immediately
+
+On first request
+
+In background jobs
+
+The strategy should minimize user-perceived latency while controlling infrastructure costs.
+
+---
+
+# 19.15 CDN Integration
+
+Static assets should be delivered through a content delivery network.
+
+Benefits include:
+
+Reduced latency
+
+Geographic distribution
+
+Caching
+
+Improved availability
+
+Reduced backend load
+
+The application should remain functional if CDN caching is temporarily unavailable.
+
+---
+
+# 19.16 Cache Strategy
+
+Cache:
+
+Images
+
+Videos
+
+Thumbnails
+
+Theme assets
+
+Fonts
+
+Gallery configuration
+
+Static resources
+
+Define clear invalidation rules when assets are regenerated.
+
+---
+
+# 19.17 Gallery Asset Packaging
+
+Each published gallery should contain references to:
+
+Theme assets
+
+Optimized media
+
+Metadata
+
+Configuration
+
+Animations
+
+Fonts
+
+Icons
+
+Packaging should minimize redundant downloads.
+
+---
+
+# 19.18 Asset Delivery
+
+Support:
+
+Responsive images
+
+Adaptive video delivery
+
+Compression
+
+Range requests where appropriate
+
+Streaming
+
+Preloading of critical assets
+
+Asset delivery should adapt to varying network conditions.
+
+---
+
+# 19.19 Download Management
+
+Gallery owners may configure:
+
+Allow downloads
+
+Disable downloads
+
+Original-quality downloads
+
+Optimized downloads
+
+Watermarked downloads (future)
+
+Download permissions should be enforced by the backend.
+
+---
+
+# 19.20 Storage Quotas
+
+Track:
+
+User storage
+
+Project storage
+
+Organization storage (future)
+
+Temporary storage
+
+Quota information should be visible to users and administrators.
+
+---
+
+# 19.21 Cleanup Strategy
+
+Automatically remove:
+
+Abandoned uploads
+
+Expired temporary files
+
+Failed processing artifacts
+
+Obsolete previews
+
+Unused cache entries
+
+Cleanup should never delete user-owned originals without explicit policy or user action.
+
+---
+
+# 19.22 Archive Strategy
+
+Archive:
+
+Inactive projects
+
+Deleted galleries (during retention period)
+
+Historical exports
+
+Archived assets should remain recoverable according to retention policy.
+
+---
+
+# 19.23 Data Retention
+
+Retention policies should define handling for:
+
+Original media
+
+Optimized media
+
+Generated assets
+
+Temporary files
+
+Deleted accounts
+
+Backups
+
+Retention behavior should be transparent to users where applicable.
+
+---
+
+# 19.24 Security
+
+Protect storage through:
+
+Access control
+
+Signed or time-limited URLs where appropriate
+
+Encryption at rest
+
+Encryption in transit
+
+Ownership validation
+
+Least-privilege access
+
+Storage services should not expose unnecessary metadata.
+
+---
+
+# 19.25 Backup & Recovery
+
+Protect against:
+
+Accidental deletion
+
+Storage corruption
+
+Regional outages
+
+Service failures
+
+Backups should be tested regularly to ensure successful restoration.
+
+---
+
+# 19.26 Monitoring
+
+Monitor:
+
+Storage growth
+
+Upload success rate
+
+Download success rate
+
+CDN cache effectiveness
+
+Bandwidth usage
+
+Asset generation failures
+
+Storage latency
+
+Administrators should have visibility into operational health.
+
+---
+
+# 19.27 Cost Optimization
+
+Optimize storage costs through:
+
+Lifecycle policies
+
+Compression
+
+Tiered storage
+
+Deduplication
+
+Efficient caching
+
+Controlled regeneration of derived assets
+
+Cost optimizations should not compromise user experience or data integrity.
+
+---
+
+# 19.28 Future Storage Features
+
+Architecture should support:
+
+Multi-region replication
+
+Enterprise storage policies
+
+Cold storage
+
+Bring-your-own-storage (future)
+
+External asset providers
+
+AI-generated media
+
+Collaborative workspaces
+
+Future additions should integrate without requiring major redesign.
+
+---
+
+# 19.29 Testing Requirements
+
+Storage validation should include:
+
+Upload testing
+
+Download testing
+
+Large file handling
+
+Resume support
+
+Corruption detection
+
+CDN validation
+
+Permission enforcement
+
+Quota enforcement
+
+Backup restoration
+
+Failure recovery
+
+Performance benchmarks
+
+---
+
+# 19.30 Completion Criteria
+
+Section 19 is complete when:
+
+* Media storage responsibilities are clearly separated.
+* Original and derived assets are managed independently.
+* Upload, optimization, caching, and CDN workflows are defined.
+* Security, quotas, cleanup, and retention policies are specified.
+* Backup, monitoring, and cost optimization strategies are documented.
+* The storage architecture supports reliable, scalable, and high-performance media delivery for Nebula's AI processing and gallery generation workflows.
+
+This storage architecture provides the foundation for managing Nebula's media assets efficiently while ensuring durability, fast delivery, operational resilience, and room for future growth.

@@ -1,0 +1,803 @@
+# Nebula
+
+# Software Requirements Specification (SRS)
+
+## Version 1.0
+
+---
+
+# Section 9 — Component Architecture & Component Specifications
+
+> **Objective**
+>
+> This section defines every reusable UI component, business component, feature component, and application shell component used throughout Nebula. Every component must have a single responsibility, be reusable, independently testable, accessible, performant, and fully documented. No page should duplicate component logic.
+
+---
+
+# 9.1 Component Philosophy
+
+Nebula shall use a **Component-Driven Architecture**.
+
+Every UI element must be built from reusable components rather than page-specific implementations.
+
+Each component must satisfy the following principles:
+
+* Single Responsibility
+* Reusability
+* Composability
+* Predictability
+* Accessibility
+* Performance
+* Testability
+* Maintainability
+
+Components should be designed for long-term scalability.
+
+---
+
+# 9.2 Component Hierarchy
+
+```
+Application
+
+├── Layout Components
+│
+├── Feature Components
+│
+├── Shared Components
+│
+├── Composite Components
+│
+└── Primitive Components
+```
+
+Each level should depend only on lower-level abstractions where appropriate.
+
+---
+
+# 9.3 Primitive Components
+
+Primitive components are the foundation of the design system.
+
+## Text
+
+Responsibilities:
+
+* Typography
+* Color variants
+* Semantic rendering
+* Responsive scaling
+
+---
+
+## Icon
+
+Requirements:
+
+* Centralized icon library
+* Configurable size
+* Configurable accessibility labels
+* Theme support
+
+---
+
+## Spacer
+
+Provides consistent spacing using design tokens.
+
+---
+
+## Divider
+
+Supports:
+
+* Horizontal
+* Vertical
+* Responsive behavior
+
+---
+
+## Badge
+
+Used for:
+
+* Status
+* Notifications
+* Labels
+* Counts
+
+---
+
+## Avatar
+
+Supports:
+
+* User image
+* Initials fallback
+* Status indicator
+* Size variants
+
+---
+
+# 9.4 Button System
+
+Button variants:
+
+Primary
+
+Secondary
+
+Tertiary
+
+Destructive
+
+Icon
+
+Floating Action
+
+Split Button
+
+Loading Button
+
+Disabled Button
+
+Every button must support:
+
+* Hover
+* Focus
+* Keyboard activation
+* Loading state
+* Disabled state
+* Accessibility labels
+
+---
+
+# 9.5 Input Components
+
+Standard inputs:
+
+Text
+
+Password
+
+Email
+
+Search
+
+Phone
+
+Number
+
+Date
+
+Time
+
+Textarea
+
+Checkbox
+
+Radio
+
+Switch
+
+Slider
+
+Dropdown
+
+Autocomplete
+
+Tag Input
+
+File Picker
+
+Folder Picker
+
+Each input supports:
+
+* Validation
+* Error display
+* Helper text
+* Required indicator
+* Disabled state
+* Read-only state
+* Keyboard navigation
+
+---
+
+# 9.6 Navigation Components
+
+Components include:
+
+Top Navigation
+
+Sidebar
+
+Bottom Navigation
+
+Breadcrumb
+
+Pagination
+
+Tabs
+
+Accordion
+
+Step Wizard
+
+Context Menu
+
+Dropdown Menu
+
+Command Palette (future)
+
+Navigation must remain consistent throughout the application.
+
+---
+
+# 9.7 Feedback Components
+
+Components:
+
+Toast
+
+Alert
+
+Banner
+
+Snackbar
+
+Progress Bar
+
+Circular Loader
+
+Skeleton Loader
+
+Empty State
+
+Error State
+
+Success State
+
+Confirmation Dialog
+
+Feedback should always be informative and actionable.
+
+---
+
+# 9.8 Modal System
+
+Modal types:
+
+Confirmation
+
+Delete
+
+Rename
+
+Settings
+
+Share
+
+Upload Warning
+
+Credit Warning
+
+Session Expired
+
+Success
+
+Error
+
+Requirements:
+
+* Keyboard accessible
+* Focus trapping
+* Background inertness
+* Responsive layout
+* Escape handling where appropriate
+
+---
+
+# 9.9 Card Components
+
+Cards represent:
+
+Projects
+
+Media
+
+Galleries
+
+Analytics
+
+Notifications
+
+Users
+
+Credits
+
+Each card should include:
+
+Header
+
+Body
+
+Footer
+
+Status
+
+Primary action
+
+Secondary actions
+
+Cards should support hover, keyboard focus, and responsive layouts.
+
+---
+
+# 9.10 Table Components
+
+Features:
+
+Sorting
+
+Filtering
+
+Pagination
+
+Column visibility
+
+Row selection
+
+Bulk actions
+
+Responsive adaptation
+
+Export support (where applicable)
+
+---
+
+# 9.11 List Components
+
+List variants:
+
+Simple List
+
+Media List
+
+Timeline
+
+Notification List
+
+Activity Feed
+
+Virtualized List
+
+Grouped List
+
+Requirements:
+
+* Keyboard support
+* Search
+* Filtering
+* Empty state
+* Loading state
+
+---
+
+# 9.12 Media Components
+
+## Image Viewer
+
+Supports:
+
+* Lazy loading
+* Zoom
+* Fullscreen
+* Rotation
+* Metadata display
+* Loading placeholders
+
+---
+
+## Video Player
+
+Supports:
+
+* Adaptive playback
+* Captions (future)
+* Fullscreen
+* Playback speed
+* Thumbnail preview
+* Keyboard shortcuts
+
+---
+
+## Media Grid
+
+Supports:
+
+* Responsive layout
+* Masonry (optional)
+* Infinite scrolling
+* Selection
+* Drag-and-drop reordering (where applicable)
+
+---
+
+# 9.13 Upload Components
+
+Upload Area
+
+Drag-and-Drop Zone
+
+Upload Queue
+
+File Item
+
+Folder Item
+
+Progress Card
+
+Retry Control
+
+Pause/Resume Controls
+
+Cancel Action
+
+Requirements:
+
+* Large-file support
+* Folder support
+* Accessible controls
+* Detailed status reporting
+
+---
+
+# 9.14 AI Components
+
+Analysis Progress
+
+Recognition Summary
+
+Metadata Viewer
+
+Face Grouping
+
+Object List
+
+Scene Classification
+
+OCR Results
+
+Timeline Visualization
+
+Duplicate Detection Results
+
+Similarity Viewer
+
+AI Confidence Indicators
+
+Users should be able to review and, where appropriate, adjust AI-generated information.
+
+---
+
+# 9.15 Gallery Builder Components
+
+Theme Selector
+
+Layout Selector
+
+Typography Selector
+
+Color Palette Picker
+
+Animation Selector
+
+Transition Selector
+
+Music Selector (optional)
+
+Privacy Controls
+
+Branding Options
+
+Live Preview
+
+Settings Sidebar
+
+Changes should update previews in real time where feasible.
+
+---
+
+# 9.16 Analytics Components
+
+Metric Card
+
+Chart Container
+
+Date Filter
+
+Trend Indicator
+
+Visitor Map (future)
+
+Traffic Breakdown
+
+Device Distribution
+
+Popular Media
+
+Analytics components should clearly distinguish between summary metrics and detailed insights.
+
+---
+
+# 9.17 Notification Components
+
+Notification Card
+
+Notification Drawer
+
+Notification Center
+
+Unread Indicator
+
+Priority Badge
+
+Action Buttons
+
+Support:
+
+* Read/unread state
+* Filtering
+* Grouping
+* Bulk actions
+
+---
+
+# 9.18 Profile Components
+
+Profile Header
+
+Avatar Editor
+
+Personal Information Form
+
+Security Panel
+
+Session List
+
+Connected Devices
+
+Preferences
+
+Delete Account Dialog
+
+---
+
+# 9.19 Settings Components
+
+General
+
+Appearance
+
+Notifications
+
+Privacy
+
+Security
+
+Storage
+
+Accessibility
+
+Language (future)
+
+Each settings section should be modular and independently maintainable.
+
+---
+
+# 9.20 Dashboard Components
+
+Welcome Banner
+
+Quick Actions
+
+Recent Projects
+
+Recent Galleries
+
+Processing Queue
+
+Credit Summary
+
+Daily Reward Card
+
+Storage Usage
+
+Notifications Widget
+
+Analytics Summary
+
+Activity Feed
+
+Widgets should be configurable where appropriate.
+
+---
+
+# 9.21 Administrator Components
+
+User Table
+
+Role Management
+
+Credit Management
+
+Project Moderation
+
+Queue Monitor
+
+System Health Dashboard
+
+Storage Monitor
+
+Audit Log Viewer
+
+Feature Flag Manager (future)
+
+Platform Settings
+
+Administrative components should be isolated from the standard user interface.
+
+---
+
+# 9.22 Layout Components
+
+Application Shell
+
+Page Container
+
+Content Wrapper
+
+Section Header
+
+Panel
+
+Split View
+
+Sidebar Layout
+
+Grid Layout
+
+Responsive Stack
+
+Layout components establish consistent structure across screens.
+
+---
+
+# 9.23 Utility Components
+
+Theme Provider
+
+Error Boundary
+
+Permission Guard
+
+Loading Boundary
+
+Suspense Wrapper
+
+Responsive Container
+
+Portal
+
+Tooltip Provider
+
+These components provide cross-cutting functionality to the application.
+
+---
+
+# 9.24 Component Lifecycle Standards
+
+Each component should define behavior for:
+
+* Initial render
+* Loading
+* Success
+* Empty
+* Error
+* Updates
+* Unmount
+* Cleanup
+
+Components must release resources and subscriptions appropriately.
+
+---
+
+# 9.25 Accessibility Requirements
+
+Every interactive component must:
+
+* Support keyboard navigation.
+* Provide visible focus indicators.
+* Include descriptive labels.
+* Use semantic markup.
+* Announce dynamic updates where appropriate.
+* Respect reduced-motion preferences.
+
+Accessibility must be considered during component design rather than retrofitted.
+
+---
+
+# 9.26 Performance Requirements
+
+Components should:
+
+* Avoid unnecessary re-renders.
+* Support lazy loading where appropriate.
+* Minimize memory usage.
+* Use virtualization for large datasets.
+* Optimize expensive calculations.
+* Clean up timers, listeners, and subscriptions.
+
+Performance optimizations should be guided by profiling rather than premature assumptions.
+
+---
+
+# 9.27 Testing Requirements
+
+Every reusable component should include:
+
+* Unit tests
+* Interaction tests
+* Accessibility validation
+* Visual regression coverage where practical
+* Edge-case handling
+* Error-state verification
+
+Critical components require comprehensive automated testing before release.
+
+---
+
+# 9.28 Documentation Requirements
+
+Every shared component should document:
+
+* Purpose
+* Public API (properties and events)
+* Expected behavior
+* Accessibility considerations
+* Usage examples
+* Constraints
+* Dependencies
+
+Documentation should evolve alongside the component.
+
+---
+
+# 9.29 Future Extensibility
+
+Components should be designed to accommodate future features such as:
+
+* Real-time collaboration
+* Plugin integrations
+* Additional AI capabilities
+* Enterprise branding
+* Advanced analytics
+* Mobile and desktop clients
+
+Future enhancements should be achievable through extension rather than replacement.
+
+---
+
+# Section 9 Completion Criteria
+
+Section 9 is complete when:
+
+* Every reusable component category is defined.
+* Component responsibilities are clearly separated.
+* Accessibility, performance, and testing expectations are documented.
+* Shared components eliminate unnecessary duplication.
+* Administrative and user-facing components remain isolated.
+* The component library supports consistent implementation across the entire Nebula platform.
+
+This component architecture provides the reusable building blocks required to implement every screen and workflow defined in previous sections while ensuring long-term maintainability and consistency.

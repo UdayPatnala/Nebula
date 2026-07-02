@@ -1,0 +1,549 @@
+# Nebula
+
+# Software Requirements Specification (SRS)
+
+## Version 1.0
+
+---
+
+# Section 11 — Backend Architecture & System Design
+
+> **Objective**
+>
+> This section defines the complete backend architecture of Nebula. The backend is responsible for authentication, business logic, AI orchestration, media processing, storage, gallery generation, credit management, analytics, notifications, administration, and system monitoring. The architecture must be modular, scalable, secure, fault-tolerant, and suitable for production workloads.
+
+---
+
+# 11.1 Backend Philosophy
+
+The backend is the **authoritative source of truth** for all business data and rules.
+
+Its responsibilities include:
+
+* Enforcing business logic.
+* Validating all client requests.
+* Managing authentication and authorization.
+* Orchestrating AI workflows.
+* Processing uploads.
+* Generating galleries.
+* Maintaining data integrity.
+* Protecting against abuse.
+* Logging and auditing significant events.
+
+The frontend must never be trusted to enforce business rules.
+
+---
+
+# 11.2 Architectural Principles
+
+The backend shall follow:
+
+* Modular architecture.
+* Domain-driven organization.
+* Separation of concerns.
+* Single responsibility.
+* Stateless request handling where practical.
+* Event-driven processing for long-running tasks.
+* Horizontal scalability.
+* Strong observability.
+* Secure-by-default design.
+
+Business logic must remain independent of presentation concerns.
+
+---
+
+# 11.3 High-Level Architecture
+
+```text
+                        Client Applications
+      (Web | Mobile Future | Desktop Future)
+                           │
+                           ▼
+                     API Gateway / Edge
+                           │
+        ┌──────────────────┼──────────────────┐
+        ▼                  ▼                  ▼
+ Authentication       REST / GraphQL      Static Assets
+                           │
+                           ▼
+                   Backend Application
+                           │
+ ┌────────────┬────────────┼────────────┬────────────┐
+ ▼            ▼            ▼            ▼            ▼
+Users     Projects      Uploads     Galleries     Credits
+ │            │            │            │            │
+ ▼            ▼            ▼            ▼            ▼
+ AI Pipeline  Analytics  Notifications  Search  Administration
+                           │
+                           ▼
+                Storage / Database / Cache / Queue
+```
+
+Each subsystem communicates through clearly defined interfaces.
+
+---
+
+# 11.4 Domain Modules
+
+The backend is divided into independent domains.
+
+## Authentication
+
+Responsibilities:
+
+* Registration.
+* Login.
+* Session management.
+* Email verification.
+* Password reset.
+* Token refresh.
+* Device management.
+
+---
+
+## Users
+
+Responsibilities:
+
+* Profile management.
+* Preferences.
+* Subscription status.
+* Storage usage.
+* Activity history.
+
+---
+
+## Projects
+
+Responsibilities:
+
+* Project lifecycle.
+* Drafts.
+* Organization.
+* Metadata.
+* Version history.
+
+---
+
+## Uploads
+
+Responsibilities:
+
+* Upload validation.
+* File ingestion.
+* Progress tracking.
+* Resume support.
+* Retry management.
+
+---
+
+## AI Processing
+
+Responsibilities:
+
+* Job orchestration.
+* Media analysis.
+* AI provider integration.
+* Result aggregation.
+* Failure recovery.
+
+---
+
+## Galleries
+
+Responsibilities:
+
+* Theme application.
+* Asset optimization.
+* Gallery generation.
+* Publication.
+* Public access.
+
+---
+
+## Credits
+
+Responsibilities:
+
+* Balance management.
+* Daily rewards.
+* Transaction history.
+* Atomic deductions.
+* Refund handling.
+
+---
+
+## Analytics
+
+Responsibilities:
+
+* Event collection.
+* Aggregation.
+* Reporting.
+* Trend analysis.
+
+---
+
+## Notifications
+
+Responsibilities:
+
+* In-app notifications.
+* Email notifications.
+* Delivery tracking.
+* Read status.
+
+---
+
+## Administration
+
+Responsibilities:
+
+* User management.
+* Moderation.
+* System monitoring.
+* Configuration.
+* Audit review.
+
+---
+
+# 11.5 Request Lifecycle
+
+```text
+Client Request
+      ↓
+Authentication
+      ↓
+Authorization
+      ↓
+Input Validation
+      ↓
+Business Logic
+      ↓
+Database / Queue / Storage
+      ↓
+Response Construction
+      ↓
+Structured Response
+```
+
+Every request follows the same validation pipeline.
+
+---
+
+# 11.6 Business Logic Layer
+
+Business rules belong exclusively in the service layer.
+
+Examples:
+
+* Credit deduction.
+* Upload limits.
+* Gallery publication.
+* Daily rewards.
+* Permission checks.
+* Subscription validation.
+
+Controllers should coordinate requests, not implement business logic.
+
+---
+
+# 11.7 Background Job System
+
+Long-running operations must execute asynchronously.
+
+Examples:
+
+* AI analysis.
+* Thumbnail generation.
+* Video processing.
+* Metadata extraction.
+* Gallery rendering.
+* Analytics aggregation.
+* Cleanup tasks.
+* Notification delivery.
+
+Jobs should be:
+
+* Retryable.
+* Idempotent where possible.
+* Observable.
+* Cancelable where appropriate.
+
+---
+
+# 11.8 Queue Management
+
+The queue system should support:
+
+* Prioritization.
+* Retries with backoff.
+* Dead-letter handling.
+* Monitoring.
+* Worker scaling.
+* Failure isolation.
+
+Queue status should be visible to administrators.
+
+---
+
+# 11.9 File Processing Pipeline
+
+Processing stages:
+
+1. Upload.
+2. Validation.
+3. Virus scan (if integrated).
+4. Metadata extraction.
+5. AI analysis.
+6. Thumbnail generation.
+7. Optimization.
+8. Storage.
+9. Gallery preparation.
+
+Each stage should report progress and recover gracefully from transient failures.
+
+---
+
+# 11.10 API Design
+
+APIs should be:
+
+* Versioned.
+* Consistent.
+* Well-documented.
+* Predictable.
+* Idempotent where appropriate.
+
+Responses should use standardized structures for success, validation errors, authorization failures, and server errors.
+
+---
+
+# 11.11 Validation Layer
+
+Every request undergoes validation for:
+
+* Data structure.
+* Required fields.
+* Data types.
+* File constraints.
+* Business rules.
+* Permissions.
+* Resource existence.
+
+Validation failures should return clear, actionable error information.
+
+---
+
+# 11.12 Authorization
+
+Authorization is enforced for every protected resource.
+
+Checks include:
+
+* Authentication status.
+* User role.
+* Resource ownership.
+* Project permissions.
+* Administrative privileges.
+
+Client-side checks are supplementary and do not replace server-side enforcement.
+
+---
+
+# 11.13 Transaction Management
+
+Critical operations require transactional integrity.
+
+Examples:
+
+* Credit deductions.
+* Gallery publication.
+* User registration.
+* Subscription changes.
+* Project deletion.
+
+Transactions should either complete successfully or roll back cleanly.
+
+---
+
+# 11.14 Event System
+
+Domain events may include:
+
+* UserRegistered.
+* UploadCompleted.
+* AnalysisCompleted.
+* GalleryPublished.
+* CreditsAwarded.
+* CreditsDeducted.
+* PasswordChanged.
+* NotificationCreated.
+
+Events should enable loose coupling between modules.
+
+---
+
+# 11.15 Logging
+
+Implement structured logging.
+
+Log categories:
+
+* Authentication.
+* Uploads.
+* AI processing.
+* Credits.
+* Security.
+* Administration.
+* Errors.
+* Performance.
+
+Sensitive information must never be written to logs.
+
+---
+
+# 11.16 Audit Trail
+
+Maintain immutable audit records for significant administrative and security actions.
+
+Examples:
+
+* Role changes.
+* Credit adjustments.
+* Account suspension.
+* Content moderation.
+* Configuration changes.
+
+Audit entries should include actor, action, target, timestamp, and outcome.
+
+---
+
+# 11.17 Error Handling
+
+Classify errors into categories:
+
+* Validation.
+* Authentication.
+* Authorization.
+* Business rule violations.
+* External service failures.
+* Database failures.
+* Storage failures.
+* Unexpected exceptions.
+
+Provide meaningful client responses while retaining detailed diagnostic information internally.
+
+---
+
+# 11.18 Performance
+
+The backend should:
+
+* Minimize request latency.
+* Optimize database access.
+* Reduce unnecessary network calls.
+* Cache appropriate responses.
+* Parallelize independent work where safe.
+* Avoid blocking operations in request handlers.
+
+Performance targets should be monitored continuously.
+
+---
+
+# 11.19 Scalability
+
+The architecture should support:
+
+* Horizontal application scaling.
+* Independent worker scaling.
+* Distributed storage.
+* Load balancing.
+* Database replication.
+* Future multi-region deployment.
+
+Scaling should not require architectural redesign.
+
+---
+
+# 11.20 Security
+
+The backend must:
+
+* Authenticate every protected request.
+* Authorize every protected operation.
+* Validate all inputs.
+* Sanitize outputs where appropriate.
+* Enforce rate limits.
+* Protect against common web vulnerabilities.
+* Secure secrets and configuration.
+* Encrypt sensitive data at rest and in transit.
+
+Security should be integrated throughout the architecture.
+
+---
+
+# 11.21 Monitoring & Observability
+
+Monitor:
+
+* Request rates.
+* Error rates.
+* Response times.
+* Queue lengths.
+* Worker health.
+* AI processing times.
+* Storage utilization.
+* Database performance.
+
+Administrators should have visibility into system health and alerts.
+
+---
+
+# 11.22 Testing Strategy
+
+Backend testing should include:
+
+* Unit tests.
+* Integration tests.
+* API contract tests.
+* Queue processing tests.
+* Transaction tests.
+* Concurrency tests.
+* Security tests.
+* Load tests.
+* Failure recovery tests.
+
+Critical business workflows require comprehensive automated coverage.
+
+---
+
+# 11.23 Future Extensibility
+
+The architecture should accommodate future capabilities such as:
+
+* Additional AI providers.
+* Payment integration.
+* Team workspaces.
+* Public APIs.
+* Enterprise deployments.
+* Multi-tenancy.
+* Mobile and desktop clients.
+
+New features should integrate through existing architectural patterns rather than requiring major restructuring.
+
+---
+
+# 11.24 Completion Criteria
+
+Section 11 is complete when:
+
+* Backend domains are clearly separated.
+* Business logic resides in dedicated service layers.
+* Long-running work is handled asynchronously.
+* Transactions protect critical operations.
+* Security, logging, monitoring, and auditing are integrated.
+* The architecture supports scalability, maintainability, and future expansion.
+* The backend provides a reliable foundation for all frontend functionality and AI processing defined in previous sections.
+
+This backend architecture establishes the production-ready server foundation for Nebula, ensuring that business rules, media processing, security, and operational reliability are implemented consistently across the platform.

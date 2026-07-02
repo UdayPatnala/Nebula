@@ -1,0 +1,94 @@
+/* CSS Variables for Viewports & Breakpoints */
+:root {
+  /* Breakpoint Tokens */
+  --breakpoint-sm: 480px;   /* Mobile */
+  --breakpoint-md: 768px;   /* Tablet */
+  --breakpoint-lg: 1024px;  /* Laptop/Desktop */
+  --breakpoint-xl: 1200px;  /* Large Display */
+
+  /* Safe Area / Spacing Guidelines */
+  --container-padding-sm: 1rem;
+  --container-padding-md: 1.5rem;
+  --container-padding-lg: 2rem;
+  --container-max-width: 1440px;
+
+  /* Z-index layers for layout */
+  --z-index-base: 0;
+  --z-index-dropdown: 100;
+  --z-index-sticky: 200;
+  --z-index-sidebar: 300;
+  --z-index-header: 400;
+  --z-index-modal: 500;
+  --z-index-toast: 600;
+  --z-index-tooltip: 700;
+}
+
+/* Layout Containers */
+.container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: var(--container-max-width);
+  padding-left: var(--container-padding-sm);
+  padding-right: var(--container-padding-sm);
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding-left: var(--container-padding-md);
+    padding-right: var(--container-padding-md);
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    padding-left: var(--container-padding-lg);
+    padding-right: var(--container-padding-lg);
+  }
+}
+
+/* Responsive Visibility Helpers */
+.hide-on-mobile {
+  @media (max-width: 767px) {
+    display: none !important;
+  }
+}
+
+.hide-on-tablet {
+  @media (max-width: 1023px) {
+    display: none !important;
+  }
+}
+
+.hide-on-desktop {
+  @media (min-width: 1024px) {
+    display: none !important;
+  }
+}
+
+.show-only-mobile {
+  @media (min-width: 768px) {
+    display: none !important;
+  }
+}
+
+.show-only-tablet {
+  @media (max-width: 479px) or (min-width: 1024px) {
+    display: none !important;
+  }
+}
+
+/* Accessibility: Focus and Reduced Motion */
+:focus-visible {
+  outline: 2px solid var(--color-focus, #3b82f6);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

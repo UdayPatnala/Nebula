@@ -1,0 +1,546 @@
+# Nebula
+
+# Software Requirements Specification (SRS)
+
+## Version 1.0
+
+---
+
+# Section 18 — Database Architecture, Data Model & Storage Design
+
+> **Objective**
+>
+> This section defines Nebula's complete persistence layer. It specifies how data is structured, related, stored, indexed, secured, archived, and maintained throughout the platform. The database must preserve integrity, support high performance, scale to millions of users and billions of media records, and remain adaptable to future product evolution.
+
+---
+
+# 18.1 Database Philosophy
+
+The database is the **single source of truth** for all persistent business data.
+
+It must ensure:
+
+* Strong consistency for critical business operations.
+* Referential integrity.
+* Predictable performance.
+* Auditability.
+* Scalability.
+* High availability.
+* Recoverability.
+* Extensibility.
+
+Business logic belongs in the application layer; the database is responsible for durable storage and enforcing structural integrity.
+
+---
+
+# 18.2 Persistence Strategy
+
+Nebula should use a polyglot persistence approach where appropriate.
+
+### Relational Database
+
+Stores:
+
+* Users
+* Projects
+* Galleries
+* Credits
+* Analytics summaries
+* Permissions
+* Configuration
+
+---
+
+### Object Storage
+
+Stores:
+
+* Images
+* Videos
+* Thumbnails
+* Generated galleries
+* Static assets
+* AI artifacts where applicable
+
+---
+
+### Cache Layer
+
+Stores:
+
+* Frequently accessed queries
+* Sessions (if applicable)
+* Temporary processing state
+* Generated previews
+* Search suggestions
+
+---
+
+### Search Index
+
+Stores searchable representations of:
+
+* Metadata
+* Tags
+* OCR
+* Captions
+* Objects
+* Locations
+* Events
+
+Each storage technology should be used for workloads it is well suited to.
+
+---
+
+# 18.3 Core Entity Relationship Overview
+
+```text id="9f1l3k"
+User
+│
+├── Projects
+│      │
+│      ├── Media
+│      │      │
+│      │      ├── Metadata
+│      │      ├── AI Analysis
+│      │      ├── Thumbnails
+│      │      └── Search Index
+│      │
+│      ├── Gallery
+│      │
+│      └── Analytics
+│
+├── Credits
+│
+├── Notifications
+│
+└── Sessions
+```
+
+Relationships should enforce ownership and referential integrity.
+
+---
+
+# 18.4 User Domain
+
+Each user record includes:
+
+* Unique identifier.
+* Profile information.
+* Authentication references.
+* Preferences.
+* Subscription level.
+* Storage usage.
+* Account status.
+* Creation timestamps.
+* Last activity.
+
+Personally identifiable information should be minimized and protected.
+
+---
+
+# 18.5 Project Domain
+
+Projects store:
+
+* Ownership.
+* Title.
+* Description.
+* Status.
+* Theme.
+* Configuration.
+* Privacy.
+* Created date.
+* Updated date.
+* Version.
+
+Projects represent the primary organizational unit for uploaded media.
+
+---
+
+# 18.6 Media Domain
+
+Each media record contains:
+
+* Unique identifier.
+* Project association.
+* File reference.
+* Media type.
+* Original filename.
+* Storage location.
+* Hash.
+* Dimensions.
+* Duration (videos).
+* Upload status.
+* Processing status.
+
+Media records should not duplicate binary file contents within the database.
+
+---
+
+# 18.7 Metadata Domain
+
+Metadata includes:
+
+* EXIF information.
+* Camera details.
+* GPS coordinates.
+* Orientation.
+* Resolution.
+* File size.
+* Creation timestamps.
+* Device information.
+
+Original metadata should remain distinguishable from AI-derived metadata.
+
+---
+
+# 18.8 AI Analysis Domain
+
+Store structured AI outputs including:
+
+* Detected faces.
+* Recognized objects.
+* Scenes.
+* Landmarks.
+* OCR results.
+* Captions.
+* Tags.
+* Similarity groups.
+* Quality scores.
+* Confidence values.
+
+AI outputs should remain versioned to support future model upgrades.
+
+---
+
+# 18.9 Gallery Domain
+
+Gallery records contain:
+
+* Project association.
+* Theme.
+* Layout.
+* Story structure.
+* Publication status.
+* Share identifier.
+* Privacy configuration.
+* Generation version.
+* Publication timestamp.
+
+Published galleries should remain reproducible from stored configuration.
+
+---
+
+# 18.10 Credit Domain
+
+Store:
+
+* Current balance.
+* Transaction history.
+* Daily reward status.
+* Reservation records.
+* Consumption records.
+* Refund records.
+
+Balances should be derivable from immutable transaction history where practical.
+
+---
+
+# 18.11 Analytics Domain
+
+Store aggregated information such as:
+
+* Views.
+* Visitors.
+* Devices.
+* Countries.
+* Engagement metrics.
+* Popular media.
+* Gallery interactions.
+
+Raw events and aggregated metrics should be separated appropriately.
+
+---
+
+# 18.12 Notification Domain
+
+Each notification records:
+
+* Recipient.
+* Category.
+* Priority.
+* Read status.
+* Delivery status.
+* Timestamp.
+* Related resource.
+
+Notifications should support future delivery channels.
+
+---
+
+# 18.13 Session Domain
+
+Session information includes:
+
+* Session identifier.
+* User association.
+* Device information.
+* Creation time.
+* Last activity.
+* Expiration.
+* Revocation status.
+
+Session data should support secure multi-device management.
+
+---
+
+# 18.14 Audit Domain
+
+Maintain immutable audit records for:
+
+* Administrative actions.
+* Security events.
+* Credit adjustments.
+* Role changes.
+* Moderation.
+* Configuration changes.
+
+Audit records should not be editable through normal application workflows.
+
+---
+
+# 18.15 Relationships
+
+Examples include:
+
+* One user owns many projects.
+* One project contains many media items.
+* One project may produce multiple gallery versions.
+* One gallery has many analytics events.
+* One user has many sessions.
+* One user has many credit transactions.
+
+Relationships should be enforced with appropriate constraints.
+
+---
+
+# 18.16 Indexing Strategy
+
+Indexes should optimize:
+
+* Authentication lookups.
+* Project retrieval.
+* Gallery sharing.
+* Search.
+* Analytics queries.
+* Processing queues.
+* Notifications.
+
+Indexes should be reviewed periodically to balance read performance and write overhead.
+
+---
+
+# 18.17 Unique Constraints
+
+Enforce uniqueness where required.
+
+Examples:
+
+* Email address.
+* Share identifier.
+* Session identifier.
+* Transaction identifier.
+* Public gallery identifier.
+
+Uniqueness should be guaranteed by the database.
+
+---
+
+# 18.18 Data Validation
+
+Persist only validated data.
+
+Validation includes:
+
+* Required fields.
+* Data types.
+* Referential integrity.
+* Ownership.
+* Business constraints.
+
+Invalid data should never reach persistent storage.
+
+---
+
+# 18.19 Soft Delete Strategy
+
+Where appropriate, support soft deletion for recoverable entities such as:
+
+* Projects.
+* Galleries.
+* Notifications.
+
+Permanent deletion should follow defined retention policies.
+
+---
+
+# 18.20 Versioning
+
+Version entities that benefit from historical tracking.
+
+Examples:
+
+* Gallery configurations.
+* AI analysis outputs.
+* User preferences.
+* Theme configurations.
+
+Version history should support rollback and comparison where applicable.
+
+---
+
+# 18.21 Transactions
+
+Critical operations requiring transactional guarantees include:
+
+* User registration.
+* Credit consumption.
+* Gallery publication.
+* Administrative credit adjustments.
+* Project deletion.
+* Role changes.
+
+Transactions should ensure consistency across related tables.
+
+---
+
+# 18.22 Backup Strategy
+
+Implement:
+
+* Scheduled backups.
+* Incremental backups.
+* Point-in-time recovery where supported.
+* Backup verification.
+* Secure storage of backups.
+
+Recovery procedures should be tested regularly.
+
+---
+
+# 18.23 Archival Strategy
+
+Support archival of:
+
+* Inactive projects.
+* Old analytics.
+* Historical audit logs.
+* Expired notifications.
+
+Archived data should remain recoverable according to retention policy.
+
+---
+
+# 18.24 Encryption
+
+Protect sensitive data:
+
+* At rest.
+* In transit.
+* During backups.
+
+Encryption key management should be handled securely and independently of application code.
+
+---
+
+# 18.25 Data Retention
+
+Define retention policies for:
+
+* Media.
+* Logs.
+* Analytics.
+* Audit records.
+* Notifications.
+* Deleted accounts.
+
+Retention should comply with applicable legal and business requirements.
+
+---
+
+# 18.26 Scalability
+
+The persistence layer should support:
+
+* Database replication.
+* Read replicas.
+* Horizontal scaling where appropriate.
+* Partitioning or sharding if future growth requires it.
+* Independent scaling of object storage and search infrastructure.
+
+Scaling strategies should preserve data integrity.
+
+---
+
+# 18.27 Monitoring
+
+Monitor:
+
+* Query performance.
+* Slow queries.
+* Storage utilization.
+* Replication health.
+* Backup status.
+* Connection counts.
+* Lock contention.
+* Error rates.
+
+Monitoring should enable proactive maintenance.
+
+---
+
+# 18.28 Testing
+
+Database validation should include:
+
+* Schema tests.
+* Migration tests.
+* Constraint validation.
+* Transaction tests.
+* Concurrency tests.
+* Backup and restore verification.
+* Performance benchmarks.
+
+Critical persistence behavior should be continuously tested.
+
+---
+
+# 18.29 Future Extensibility
+
+The data model should support future capabilities including:
+
+* Team workspaces.
+* Enterprise organizations.
+* Shared projects.
+* AI model history.
+* Marketplace assets.
+* Plugin metadata.
+* Public APIs.
+* Multi-region deployments.
+
+Future additions should integrate without requiring disruptive schema redesign.
+
+---
+
+# 18.30 Completion Criteria
+
+Section 18 is complete when:
+
+* Core entities and relationships are defined.
+* Persistence responsibilities are clearly separated across relational storage, object storage, caching, and search indexing.
+* Data integrity, versioning, transactions, and security are specified.
+* Backup, archival, monitoring, and scalability strategies are documented.
+* The data model supports current functionality and anticipated future growth without compromising maintainability or performance.
+
+This section establishes Nebula's long-term data foundation, ensuring reliable storage, efficient retrieval, and consistent management of users, media, AI outputs, galleries, credits, and operational information throughout the platform.

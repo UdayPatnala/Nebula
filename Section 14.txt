@@ -1,0 +1,539 @@
+# Nebula
+
+# Software Requirements Specification (SRS)
+
+## Version 1.0
+
+---
+
+# Section 14 — Credits, Usage, Rewards & Monetization System
+
+> **Objective**
+>
+> This section defines Nebula's complete credit, usage, entitlement, reward, and monetization system. It specifies how credits are earned, stored, reserved, consumed, refunded, audited, and protected against fraud. The system must guarantee fairness, transactional integrity, scalability, and a predictable user experience.
+
+---
+
+# 14.1 System Philosophy
+
+The credit system is the **commercial engine** of Nebula.
+
+It must guarantee:
+
+* Fairness
+* Transparency
+* Atomic transactions
+* Fraud resistance
+* Auditability
+* Recoverability
+* Consistency
+* Extensibility
+
+A user must never lose credits due to platform failures.
+
+---
+
+# 14.2 Credit Types
+
+Nebula supports multiple credit categories.
+
+## Standard Credits
+
+Used for:
+
+* Standard gallery generation
+* Standard AI processing
+
+---
+
+## Bonus Credits
+
+Granted by:
+
+* Daily rewards
+* Promotions
+* Referral programs (future)
+* Special events
+
+---
+
+## Purchased Credits
+
+Future feature.
+
+Obtained through:
+
+* Subscription
+* One-time purchases
+* Enterprise allocation
+
+---
+
+## Administrative Credits
+
+Granted only by administrators.
+
+Used for:
+
+* Customer support
+* Compensation
+* Manual adjustments
+
+All administrative grants must be audited.
+
+---
+
+# 14.3 Daily Usage Policy
+
+Current business rules:
+
+Every registered user receives:
+
+* One free gallery generation each day.
+
+Daily login rewards grant:
+
+* Two additional standard generations.
+
+Total standard generations available each day:
+
+**3**
+
+Unused earned credits accumulate according to platform policy unless intentionally expired.
+
+Future plans may modify these limits without requiring architectural changes.
+
+---
+
+# 14.4 Credit Lifecycle
+
+```text id="w4m2ak"
+Credit Created
+
+↓
+
+Available
+
+↓
+
+Reserved
+
+↓
+
+Consumed
+
+↓
+
+Recorded
+
+↓
+
+Archived
+```
+
+Credits should never skip lifecycle stages.
+
+---
+
+# 14.5 Credit Reservation
+
+Before gallery publication:
+
+Credits are **reserved**, not consumed.
+
+Reservation occurs only after:
+
+* Upload completed.
+* AI processing completed.
+* Preview generated successfully.
+* Validation passed.
+
+Reservation prevents duplicate publication requests.
+
+---
+
+# 14.6 Credit Consumption
+
+Credits are deducted **only after all of the following succeed**:
+
+1. Upload completed successfully.
+2. Media validation passed.
+3. AI processing completed successfully.
+4. Gallery preview generated.
+5. User reviewed preview.
+6. User explicitly selected **Publish**.
+7. Gallery generation completed.
+8. Public gallery created successfully.
+9. Shareable link generated successfully.
+10. Database transaction committed successfully.
+
+If **any** step fails before completion, no credit should be consumed.
+
+---
+
+# 14.7 Credit Refund Rules
+
+Credits should automatically return to the available balance when failures occur before successful publication.
+
+Examples:
+
+* Upload failure.
+* Processing failure.
+* Gallery generation failure.
+* Network interruption before completion.
+* Browser crash before publication completes.
+* Internal server error.
+* Queue timeout.
+* Storage failure.
+
+Refund logic should be automatic and auditable.
+
+---
+
+# 14.8 Credit Expiration
+
+Platform policy determines whether credits expire.
+
+If expiration is introduced in the future:
+
+* Users should receive advance notice.
+* Expiration dates should be visible.
+* Older credits should generally be consumed before newer credits, unless policy specifies otherwise.
+
+---
+
+# 14.9 Credit Priority
+
+When multiple credit sources exist, define a deterministic consumption order.
+
+Example policy:
+
+1. Promotional credits.
+2. Daily reward credits.
+3. Standard accumulated credits.
+4. Purchased credits.
+
+The chosen policy should be documented and consistently enforced.
+
+---
+
+# 14.10 Daily Reward System
+
+Daily rewards encourage regular engagement.
+
+Workflow:
+
+```text id="4q3t4b"
+User Login
+
+↓
+
+Eligibility Check
+
+↓
+
+Reward Granted
+
+↓
+
+Transaction Recorded
+
+↓
+
+Dashboard Updated
+
+↓
+
+Notification Displayed
+```
+
+A reward should not be granted more than once within the configured reward period.
+
+---
+
+# 14.11 Usage Limits
+
+Enforce configurable limits such as:
+
+* Daily generations.
+* Concurrent generations.
+* Upload size.
+* Storage usage.
+* AI processing quotas.
+
+Limits should be adjustable by subscription level.
+
+---
+
+# 14.12 Transaction System
+
+Every credit event creates an immutable transaction.
+
+Transaction types include:
+
+* Daily reward.
+* Bonus grant.
+* Administrative adjustment.
+* Reservation.
+* Consumption.
+* Refund.
+* Purchase (future).
+* Expiration (future).
+
+Each transaction records:
+
+* Timestamp.
+* User.
+* Source.
+* Type.
+* Amount.
+* Related project or gallery (where applicable).
+* Result.
+
+---
+
+# 14.13 Atomic Transactions
+
+Credit operations must be atomic.
+
+Examples:
+
+* Reserve credit.
+* Publish gallery.
+* Consume credit.
+
+These operations either complete entirely or roll back completely.
+
+Partial updates are unacceptable.
+
+---
+
+# 14.14 Concurrency Protection
+
+Prevent:
+
+* Double spending.
+* Duplicate publication.
+* Multiple browser tab conflicts.
+* Simultaneous requests consuming the same credit.
+* Race conditions.
+
+The backend remains the authoritative decision-maker.
+
+---
+
+# 14.15 Fraud Prevention
+
+Monitor for patterns such as:
+
+* Automated account creation.
+* Reward farming.
+* Rapid repeated publication attempts.
+* Excessive failed requests.
+* Credit manipulation attempts.
+* Unauthorized administrative actions.
+
+Suspicious behavior should be logged and handled according to platform policy.
+
+---
+
+# 14.16 Administrative Credit Management
+
+Authorized administrators may:
+
+* Grant credits.
+* Revoke credits.
+* Correct transaction errors.
+* Review transaction history.
+
+Every administrative action must:
+
+* Require appropriate authorization.
+* Be justified.
+* Be recorded in the audit log.
+
+---
+
+# 14.17 Credit Dashboard
+
+Users should be able to view:
+
+* Current balance.
+* Available daily generation status.
+* Reward history.
+* Transaction history.
+* Generation history.
+* Upcoming eligibility for daily rewards.
+
+The dashboard should clearly explain why credits changed.
+
+---
+
+# 14.18 Subscription Integration (Future)
+
+The architecture should support future subscription tiers.
+
+Examples:
+
+* Free.
+* Creator.
+* Professional.
+* Business.
+* Enterprise.
+
+Subscription changes should automatically adjust entitlements without affecting historical transaction records.
+
+---
+
+# 14.19 Promotional Campaigns (Future)
+
+Support campaigns such as:
+
+* Referral bonuses.
+* Seasonal rewards.
+* Beta testing incentives.
+* Event promotions.
+
+Campaign logic should remain configurable and isolated from core credit processing.
+
+---
+
+# 14.20 Notification Integration
+
+Notify users when:
+
+* Daily rewards are granted.
+* Credits are consumed.
+* Credits are refunded.
+* Credits are about to expire (if applicable).
+* Administrative adjustments occur.
+
+Notifications should be informative and traceable to transaction history.
+
+---
+
+# 14.21 Analytics
+
+Collect aggregated metrics including:
+
+* Daily credit grants.
+* Credit consumption.
+* Refund rates.
+* Reward redemption.
+* Average generations per user.
+* Subscription utilization (future).
+
+Analytics should support business planning without exposing individual user data unnecessarily.
+
+---
+
+# 14.22 Error Handling
+
+Examples:
+
+* Insufficient credits.
+* Reservation conflict.
+* Duplicate publication.
+* Transaction timeout.
+* Reward already claimed.
+* Invalid credit state.
+
+Errors should explain the problem and, where appropriate, suggest the next action.
+
+---
+
+# 14.23 Security
+
+Protect the credit system against:
+
+* Client-side manipulation.
+* Replay attacks.
+* Duplicate requests.
+* Unauthorized adjustments.
+* API abuse.
+* Tampering with transaction records.
+
+Only trusted backend services may modify balances.
+
+---
+
+# 14.24 Audit Requirements
+
+Every balance change must be traceable.
+
+Audit records should include:
+
+* Actor.
+* Action.
+* Timestamp.
+* Previous balance.
+* New balance.
+* Reason.
+* Related resource.
+* Outcome.
+
+Audit records should be immutable.
+
+---
+
+# 14.25 Recovery & Reconciliation
+
+Provide mechanisms to:
+
+* Detect inconsistencies.
+* Reconcile balances with transaction history.
+* Recover from interrupted transactions.
+* Resolve failed reservations.
+
+Administrative reconciliation tools should preserve a complete audit trail.
+
+---
+
+# 14.26 Future Extensibility
+
+The architecture should support future additions such as:
+
+* Marketplace purchases.
+* Team credit pools.
+* Organization-level quotas.
+* API usage billing.
+* AI model–specific pricing.
+* Dynamic promotional campaigns.
+* Enterprise billing.
+
+Future monetization features should integrate without requiring redesign of the core transaction system.
+
+---
+
+# 14.27 Testing Requirements
+
+Testing should include:
+
+* Credit grants.
+* Daily rewards.
+* Reservation logic.
+* Consumption.
+* Refunds.
+* Transaction rollback.
+* Concurrent requests.
+* Multi-device usage.
+* Administrative adjustments.
+* Fraud detection scenarios.
+* Recovery after failures.
+
+Critical financial workflows require exhaustive automated testing and periodic manual verification.
+
+---
+
+# 14.28 Completion Criteria
+
+Section 14 is complete when:
+
+* Credit lifecycle and transaction rules are fully defined.
+* Daily rewards and usage limits follow documented business policies.
+* Consumption occurs only after successful gallery publication.
+* Refunds and recovery mechanisms are automatic and auditable.
+* Concurrency, fraud prevention, and atomicity are enforced.
+* Administrative adjustments and future monetization features are supported within a secure, extensible architecture.
+
+This section establishes Nebula's production-grade credit and monetization framework, ensuring reliable entitlement management, transparent accounting, and a trustworthy user experience.

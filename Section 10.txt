@@ -1,0 +1,704 @@
+# Nebula
+
+# Software Requirements Specification (SRS)
+
+## Version 1.0
+
+---
+
+# Section 10 — Application State Management & Data Flow Architecture
+
+> **Objective**
+>
+> This section defines how application state, server state, user session state, AI processing state, upload state, gallery state, and UI state are managed throughout Nebula. The goal is to ensure predictable behavior, eliminate race conditions, prevent inconsistent UI, and maintain synchronization across all parts of the application.
+
+---
+
+# 10.1 State Management Philosophy
+
+Nebula shall implement a **single, predictable, observable state architecture**.
+
+The application must ensure:
+
+* Single Source of Truth
+* Predictable Updates
+* Immutable State Changes
+* Deterministic Rendering
+* Minimal Re-renders
+* Automatic Synchronization
+* Offline Resilience
+* Recoverable Sessions
+* No Duplicate State
+* No Conflicting State
+
+Every piece of data should have exactly one authoritative owner.
+
+---
+
+# 10.2 Types of State
+
+Nebula manages several distinct categories of state.
+
+## UI State
+
+Short-lived interface state.
+
+Examples:
+
+* Modal visibility
+* Sidebar collapse
+* Selected tabs
+* Wizard step
+* Active dropdown
+* Theme
+* Tooltip visibility
+* Selected cards
+
+UI state should never contain business-critical data.
+
+---
+
+## Local Component State
+
+Owned by a single component.
+
+Examples:
+
+* Form values
+* Validation messages
+* Search input
+* Temporary selections
+* Preview zoom level
+* Scroll position
+
+Destroyed when the component unmounts unless explicitly preserved.
+
+---
+
+## Shared Application State
+
+Accessible across multiple features.
+
+Includes:
+
+* Current user
+* Authentication status
+* Credits
+* Notifications
+* Current project
+* User preferences
+* Feature flags
+* Theme settings
+* Language settings (future)
+
+---
+
+## Server State
+
+Represents backend data.
+
+Examples:
+
+* Projects
+* Galleries
+* AI analysis
+* Analytics
+* User profile
+* Credit history
+* Notifications
+* Upload history
+
+Server state should be synchronized rather than duplicated.
+
+---
+
+## Session State
+
+Maintains authentication.
+
+Contains:
+
+* Access status
+* Session expiration
+* Active device
+* Login timestamp
+* Refresh status
+
+Sensitive tokens must never be exposed unnecessarily to application code.
+
+---
+
+## Background Task State
+
+Tracks long-running operations.
+
+Examples:
+
+* Upload progress
+* AI processing
+* Gallery generation
+* Thumbnail generation
+* Background synchronization
+
+Users should be able to leave and return without losing progress information.
+
+---
+
+# 10.3 State Ownership
+
+Each domain owns its own state.
+
+| Domain         | Owns                          |
+| -------------- | ----------------------------- |
+| Authentication | User session                  |
+| Projects       | Project metadata              |
+| Upload         | Upload queue                  |
+| AI             | Analysis results              |
+| Gallery        | Gallery configuration         |
+| Credits        | Credit balance & transactions |
+| Analytics      | Analytics data                |
+| Notifications  | Notification state            |
+| Settings       | User preferences              |
+
+Ownership must remain clearly defined to prevent conflicting updates.
+
+---
+
+# 10.4 State Lifecycle
+
+Every state object should move through defined phases.
+
+```text
+Created
+
+↓
+
+Loading
+
+↓
+
+Available
+
+↓
+
+Updating
+
+↓
+
+Synchronized
+
+↓
+
+Archived / Deleted
+```
+
+Unexpected transitions should be treated as errors.
+
+---
+
+# 10.5 Data Flow Principles
+
+Data flows in one direction.
+
+```text
+User Action
+
+↓
+
+Business Logic
+
+↓
+
+State Update
+
+↓
+
+UI Re-render
+
+↓
+
+User Feedback
+```
+
+Components should not modify shared state directly.
+
+All updates pass through defined state management mechanisms.
+
+---
+
+# 10.6 Authentication State
+
+Stores:
+
+Authentication Status
+
+Current User
+
+Role
+
+Permissions
+
+Email Verification
+
+Session Expiration
+
+Multi-device Information
+
+Refresh Status
+
+Authentication changes should immediately update protected UI without requiring a page reload.
+
+---
+
+# 10.7 User State
+
+Stores:
+
+Profile
+
+Preferences
+
+Avatar
+
+Subscription
+
+Credits
+
+Recent Projects
+
+Notification Preferences
+
+Theme
+
+Language (future)
+
+Only changed fields should be synchronized to reduce unnecessary network traffic.
+
+---
+
+# 10.8 Project State
+
+Each project maintains:
+
+Project Information
+
+Media Collection
+
+Upload Status
+
+Analysis Status
+
+Gallery Settings
+
+Generation Status
+
+Analytics
+
+Version History
+
+Publishing Status
+
+Projects should support draft persistence.
+
+---
+
+# 10.9 Upload State
+
+Tracks:
+
+Queue
+
+Current Upload
+
+Completed Uploads
+
+Failed Uploads
+
+Retries
+
+Pause Status
+
+Resume Status
+
+Transfer Speed
+
+Estimated Remaining Time
+
+Uploads must survive temporary connectivity interruptions whenever possible.
+
+---
+
+# 10.10 AI Processing State
+
+Stores:
+
+Current Stage
+
+Progress
+
+Detected Faces
+
+Objects
+
+Scenes
+
+OCR
+
+Metadata
+
+Captions
+
+Tags
+
+Grouping
+
+Timeline
+
+Warnings
+
+Confidence Scores
+
+The interface should update incrementally as results become available.
+
+---
+
+# 10.11 Gallery Builder State
+
+Stores:
+
+Theme
+
+Layout
+
+Typography
+
+Colors
+
+Animations
+
+Transitions
+
+Music
+
+Privacy
+
+Download Settings
+
+Branding
+
+Preview Version
+
+Unsaved changes should be clearly indicated.
+
+---
+
+# 10.12 Gallery Generation State
+
+Tracks:
+
+Validation
+
+Asset Optimization
+
+Rendering
+
+Packaging
+
+Link Generation
+
+Publication
+
+Completion
+
+Failures
+
+Publishing should be resumable where practical.
+
+---
+
+# 10.13 Credits State
+
+Stores:
+
+Current Balance
+
+Daily Reward Status
+
+Transaction History
+
+Pending Transactions
+
+Reserved Credits
+
+Refund Events
+
+Credits should never become negative due to race conditions or duplicate requests.
+
+---
+
+# 10.14 Analytics State
+
+Tracks:
+
+Views
+
+Visitors
+
+Countries
+
+Devices
+
+Popular Media
+
+Engagement
+
+Traffic Trends
+
+Date Filters
+
+Caching should reduce repeated requests while maintaining freshness.
+
+---
+
+# 10.15 Notification State
+
+Stores:
+
+Unread Count
+
+Priority
+
+Category
+
+Read Status
+
+Delivery Time
+
+Actions
+
+Notifications should synchronize across multiple devices where supported.
+
+---
+
+# 10.16 Settings State
+
+Stores:
+
+Theme
+
+Appearance
+
+Accessibility
+
+Privacy
+
+Security Preferences
+
+Notification Settings
+
+Storage Preferences
+
+Changes should be validated before persistence.
+
+---
+
+# 10.17 Error State
+
+Errors should be categorized consistently.
+
+Examples:
+
+Validation
+
+Network
+
+Authentication
+
+Authorization
+
+Server
+
+AI Processing
+
+Upload
+
+Storage
+
+Unknown
+
+Each error should include:
+
+* Code
+* User-friendly message
+* Recovery guidance
+* Logging metadata
+
+---
+
+# 10.18 Loading State
+
+Every asynchronous operation defines:
+
+Idle
+
+Loading
+
+Success
+
+Error
+
+Retrying
+
+Cancelled
+
+Timeout
+
+The UI should communicate the current state clearly.
+
+---
+
+# 10.19 Optimistic Updates
+
+Use optimistic updates only where the user experience benefits and conflicts can be resolved safely.
+
+Examples:
+
+* Renaming a project.
+* Updating profile information.
+* Marking notifications as read.
+
+Operations affecting credits, publication, or security should wait for server confirmation before updating visible state.
+
+---
+
+# 10.20 Background Synchronization
+
+Background synchronization should support:
+
+* Automatic refresh of stale data.
+* Retry after transient failures.
+* Conflict detection.
+* Preservation of user edits.
+* Network-aware behavior.
+
+The application should avoid interrupting active workflows.
+
+---
+
+# 10.21 Multi-Tab Synchronization
+
+When multiple browser tabs are open:
+
+* Authentication state should remain consistent.
+* Theme changes should propagate.
+* Credit updates should synchronize.
+* Notifications should stay in sync.
+* Duplicate gallery generation should be prevented.
+* Concurrent edits should be detected and handled appropriately.
+
+---
+
+# 10.22 Offline Handling
+
+When connectivity is lost:
+
+* Display offline status.
+* Preserve local work.
+* Queue supported operations.
+* Retry synchronization after reconnection.
+* Inform users of any limitations.
+
+Critical operations should fail gracefully with clear guidance.
+
+---
+
+# 10.23 State Persistence
+
+Persist only necessary information between sessions.
+
+Examples:
+
+* Theme preference.
+* Language preference (future).
+* Last opened project.
+* Draft projects (where applicable).
+* Sidebar state.
+
+Sensitive information should not be persisted insecurely.
+
+---
+
+# 10.24 Cache Management
+
+Cache should improve responsiveness while avoiding stale or inconsistent data.
+
+Policies should define:
+
+* Cache lifetime.
+* Invalidation rules.
+* Refresh triggers.
+* Background updates.
+
+Manual refresh should remain available where appropriate.
+
+---
+
+# 10.25 State Validation
+
+All incoming data should be validated before entering application state.
+
+Validation includes:
+
+* Structure.
+* Required fields.
+* Data types.
+* Business rules.
+* Permissions.
+
+Invalid data should be rejected or sanitized appropriately.
+
+---
+
+# 10.26 Performance Considerations
+
+State updates should:
+
+* Minimize unnecessary renders.
+* Batch related updates.
+* Avoid deep object mutations.
+* Clean up obsolete state.
+* Release unused resources.
+
+Performance should be monitored during development and optimized based on profiling.
+
+---
+
+# 10.27 Testing Requirements
+
+State management should be validated through:
+
+* Unit tests.
+* Integration tests.
+* Concurrency tests.
+* Multi-tab synchronization tests.
+* Offline/online transition tests.
+* Recovery tests.
+* Regression tests.
+
+Critical business state, such as credits and publication status, requires comprehensive automated coverage.
+
+---
+
+# 10.28 Completion Criteria
+
+Section 10 is complete when:
+
+* Every category of state has a defined owner.
+* Data flow is predictable and unidirectional.
+* Synchronization strategies are documented.
+* Offline behavior and recovery are specified.
+* Critical operations are protected against race conditions and inconsistent updates.
+* State persistence, caching, and validation rules are clearly established.
+* The architecture supports future expansion without introducing state duplication or conflicting sources of truth.
+
+This state management specification provides the operational backbone that keeps Nebula's frontend synchronized with backend services while maintaining a responsive, reliable, and consistent user experience.

@@ -1,0 +1,66 @@
+.input-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
+  text-align: left;
+  font-family: var(--font-sans);
+}
+
+.input-field-label {
+  font-size: var(--font-size-label);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+  display: flex;
+  gap: 2px;
+}
+
+.input-field-required {
+  color: var(--color-error);
+}
+
+.input-field-control {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-body);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  outline: none;
+  font-family: inherit;
+  height: 40px;
+  box-sizing: border-box;
+}
+
+.input-field-control:focus {
+  border-color: var(--color-focus);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+}
+
+.input-field-control:disabled {
+  background-color: var(--color-bg-surface-hover);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+/* Error States */
+.input-field-has-error .input-field-control {
+  border-color: var(--color-error);
+}
+
+.input-field-has-error .input-field-control:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.input-field-error-text {
+  font-size: var(--font-size-caption);
+  color: var(--color-error);
+  margin: 0;
+}
+
+.input-field-helper-text {
+  font-size: var(--font-size-caption);
+  color: var(--color-text-muted);
+  margin: 0;
+}

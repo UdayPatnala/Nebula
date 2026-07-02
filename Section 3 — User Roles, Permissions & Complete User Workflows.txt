@@ -1,0 +1,390 @@
+# Nebula
+
+# Software Requirements Specification (SRS)
+
+## Version 1.0
+
+---
+
+# Section 3 — User Roles, Permissions & Complete User Workflows
+
+> **Objective**
+>
+> Define every actor in the system, every permission, every restriction, and every complete workflow from first visit to gallery sharing. This section serves as the authorization and business-process blueprint for the entire application.
+
+---
+
+# 3.1 User Roles
+
+Nebula implements **Role-Based Access Control (RBAC)**. Every request must be authorized on the server. The frontend is responsible only for improving user experience and must never be relied upon for security.
+
+The platform defines the following roles:
+
+1. Visitor (Unauthenticated)
+2. Registered User
+3. Premium User (Future Expansion)
+4. Administrator
+5. Super Administrator (System Owner)
+
+Each role inherits the permissions of the previous role unless explicitly restricted.
+
+---
+
+# 3.2 Visitor (Guest)
+
+A visitor has not signed in.
+
+### Allowed Actions
+
+* Browse the landing page.
+* View pricing.
+* Read FAQs.
+* View documentation and help pages.
+* Open publicly shared galleries.
+* Watch videos in public galleries.
+* View images.
+* Switch themes (light/dark mode).
+* Zoom supported media.
+* View gallery metadata permitted by the owner.
+* Share public gallery links.
+* Report inappropriate content.
+* Register an account.
+* Log in.
+
+### Restrictions
+
+Visitors cannot:
+
+* Upload media.
+* Generate galleries.
+* Access the dashboard.
+* View analytics.
+* Edit projects.
+* Consume credits.
+* Access APIs requiring authentication.
+* View private or unlisted galleries without authorization.
+* Access administrative interfaces.
+
+---
+
+# 3.3 Registered User
+
+After authentication and email verification, a user gains access to the full standard feature set.
+
+### Permissions
+
+#### Account
+
+* Update profile.
+* Change password.
+* Enable or disable notifications.
+* Manage devices.
+* View active sessions.
+* Delete account (subject to confirmation and retention policies).
+
+#### Projects
+
+* Create projects.
+* Rename projects.
+* Duplicate projects.
+* Archive projects.
+* Restore archived projects.
+* Delete projects.
+* Organize projects.
+* Search projects.
+* Filter projects.
+
+#### Upload
+
+* Upload images.
+* Upload videos.
+* Upload folders.
+* Drag-and-drop uploads.
+* Resume interrupted uploads.
+* Retry failed uploads.
+
+#### AI Analysis
+
+* Start analysis.
+* View progress.
+* Cancel analysis.
+* Re-run analysis.
+* Edit detected metadata manually where supported.
+
+#### Gallery
+
+* Choose themes.
+* Configure layouts.
+* Preview galleries.
+* Publish galleries.
+* Regenerate galleries.
+* Unpublish galleries.
+* Delete galleries.
+* Share galleries.
+* Configure privacy settings.
+
+#### Credits
+
+* View balance.
+* Receive daily rewards.
+* View credit history.
+* Review generation history.
+
+#### Analytics
+
+* View project analytics.
+* View gallery analytics.
+* Track visitors.
+* Review engagement metrics.
+
+---
+
+# 3.4 Premium User (Future)
+
+Premium extends the standard role.
+
+Additional capabilities include:
+
+* Larger upload limits.
+* Priority AI queues.
+* More storage.
+* Premium themes.
+* Custom branding.
+* Password-protected galleries.
+* Gallery expiration settings.
+* Team collaboration.
+* Custom domains.
+* White-label galleries.
+* API access (future).
+* Advanced analytics.
+
+The system architecture should support these features even if they are introduced later.
+
+---
+
+# 3.5 Administrator
+
+Administrators manage the platform but should not have unrestricted access to user content unless necessary for moderation or support, and such access should be logged.
+
+### Responsibilities
+
+#### User Management
+
+* View users.
+* Suspend accounts.
+* Restore accounts.
+* Delete accounts.
+* Reset user credits.
+* Adjust quotas.
+* Moderate reports.
+
+#### Project Moderation
+
+* Review public galleries.
+* Hide inappropriate content.
+* Remove illegal content.
+* Restore moderated content.
+* View moderation history.
+
+#### AI Management
+
+* Monitor processing queues.
+* Restart failed jobs.
+* Review processing errors.
+* Monitor AI performance.
+
+#### System Monitoring
+
+* View server health.
+* View storage usage.
+* View cache status.
+* View database health.
+* Monitor background workers.
+* Review application logs.
+
+#### Analytics
+
+* Platform usage.
+* Daily active users.
+* Gallery generation trends.
+* Storage growth.
+* AI utilization.
+* Error rates.
+
+---
+
+# 3.6 Super Administrator
+
+Reserved for the platform owner.
+
+This role is responsible for system configuration and infrastructure management.
+
+Capabilities include:
+
+* Manage administrators.
+* Configure platform-wide settings.
+* Manage feature flags.
+* Configure storage providers.
+* Configure AI providers.
+* Configure email services.
+* Configure payment providers.
+* Manage backups.
+* Manage deployments.
+* Access security dashboards.
+* Review audit logs.
+
+**Important:** Credentials must **never** be hard-coded into the application. Administrator and super administrator accounts should be created through secure initialization procedures or environment-based provisioning.
+
+---
+
+# 3.7 Permission Matrix
+
+| Feature                | Visitor | User | Premium | Admin | Super Admin |
+| ---------------------- | :-----: | :--: | :-----: | :---: | :---------: |
+| View Landing Page      |    ✓    |   ✓  |    ✓    |   ✓   |      ✓      |
+| Register               |    ✓    |   —  |    —    |   —   |      —      |
+| Login                  |    ✓    |   ✓  |    ✓    |   ✓   |      ✓      |
+| Upload Media           |    ✗    |   ✓  |    ✓    |   ✓   |      ✓      |
+| AI Analysis            |    ✗    |   ✓  |    ✓    |   ✓   |      ✓      |
+| Generate Gallery       |    ✗    |   ✓  |    ✓    |   ✓   |      ✓      |
+| Public Gallery Viewing |    ✓    |   ✓  |    ✓    |   ✓   |      ✓      |
+| Analytics              |    ✗    |   ✓  |    ✓    |   ✓   |      ✓      |
+| Premium Themes         |    ✗    |   ✗  |    ✓    |   ✓   |      ✓      |
+| User Management        |    ✗    |   ✗  |    ✗    |   ✓   |      ✓      |
+| Platform Configuration |    ✗    |   ✗  |    ✗    |   ✗   |      ✓      |
+
+---
+
+# 3.8 Complete User Journey
+
+## Journey 1 — New User
+
+1. Open landing page.
+2. Learn about Nebula.
+3. Create an account.
+4. Verify email.
+5. Sign in.
+6. Complete onboarding (optional but skippable).
+7. Arrive at dashboard.
+8. View available credits.
+9. Create first project.
+
+Expected result: User reaches the dashboard without confusion and understands the next action.
+
+---
+
+## Journey 2 — Upload & Analysis
+
+1. Create project.
+2. Select images, videos, or folders.
+3. Validate files.
+4. Upload begins with progress indicators.
+5. Background processing starts.
+6. AI analyzes media.
+7. Results are displayed with editable metadata if supported.
+8. User reviews the analysis.
+
+Expected result: All valid media is processed successfully, and any failures are clearly explained.
+
+---
+
+## Journey 3 — Gallery Creation
+
+1. Select gallery theme.
+2. Configure layout.
+3. Configure animations.
+4. Configure typography.
+5. Configure privacy.
+6. Generate preview.
+7. Review preview.
+8. Return and edit if needed.
+9. Publish.
+
+Expected result: A shareable gallery is generated without consuming credits until the user confirms publication.
+
+---
+
+## Journey 4 — Public Visitor
+
+1. Receive gallery link.
+2. Open gallery.
+3. Experience smooth loading.
+4. Browse images and videos.
+5. Navigate using keyboard, touch, or mouse.
+6. Search if enabled.
+7. Download media only if allowed.
+8. Share the gallery.
+
+Expected result: Fast, responsive, and visually polished viewing experience.
+
+---
+
+## Journey 5 — Returning User
+
+1. Sign in.
+2. Receive daily reward if eligible.
+3. View updated credit balance.
+4. Continue an existing project or create a new one.
+5. Review notifications and analytics.
+
+Expected result: Continuity without losing previous work.
+
+---
+
+# 3.9 Navigation Standards
+
+Every multi-step workflow must include consistent navigation:
+
+* Home
+* Dashboard
+* Back
+* Next
+* Previous
+* Continue
+* Save Draft
+* Cancel
+* Exit
+* Preview
+* Publish
+* Finish
+
+Navigation must:
+
+* Preserve user progress where appropriate.
+* Warn before discarding unsaved changes.
+* Support browser back/forward behavior without corrupting application state.
+* Remain consistent across desktop, tablet, and mobile.
+
+---
+
+# 3.10 Failure & Recovery Scenarios
+
+The application must gracefully recover from:
+
+* Network interruptions during upload.
+* Browser refreshes.
+* Session expiration.
+* AI processing failures.
+* Storage service outages.
+* Partial uploads.
+* Invalid media.
+* Database connectivity issues.
+* Background worker failures.
+
+Recovery should preserve user work whenever technically feasible and provide clear guidance when manual intervention is required.
+
+---
+
+# Section 3 Completion Criteria
+
+Section 3 is complete when:
+
+* Every role has clearly defined permissions.
+* Every workflow has a defined start, middle, and end.
+* Authorization is enforced on the server.
+* Navigation is consistent and predictable.
+* Failure scenarios are handled gracefully.
+* User journeys are validated through automated and manual testing.
+* Future expansion (such as Premium features) is supported without requiring major architectural changes.
+
+This section establishes the operational behavior of every user type and every primary interaction within the Nebula platform, forming the foundation for the UI/UX specifications and system architecture in the subsequent sections.

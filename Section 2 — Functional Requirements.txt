@@ -1,0 +1,555 @@
+Nebula
+Software Requirements Specification (SRS)
+Version 1.0
+Section 2 — Functional Requirements
+2.1 Overview
+
+This section defines every functional capability of Nebula.
+
+Every feature described here is mandatory unless explicitly marked as optional.
+
+The application shall not ship with placeholder implementations, incomplete workflows, or partially functional features.
+
+Each feature must integrate seamlessly with every other subsystem.
+
+2.2 User Roles
+
+The system supports four roles.
+
+Visitor
+
+Can:
+
+Open public galleries.
+View photos.
+View videos.
+Play background music (if enabled).
+Navigate through stories.
+Search inside galleries (when enabled).
+View gallery metadata.
+Download media only if permitted.
+Share gallery links.
+Switch between dark/light mode.
+View on desktop, tablet, and mobile.
+
+Cannot:
+
+Upload media.
+Edit galleries.
+View private galleries.
+Access user dashboards.
+Access administration.
+Registered User
+
+Can:
+
+Register.
+Login.
+Verify email.
+Reset password.
+Upload media.
+Create unlimited projects (subject to storage and plan limits).
+Organize projects.
+Delete projects.
+Archive projects.
+Restore archived projects.
+Configure gallery settings.
+Preview galleries.
+Generate shareable galleries.
+Manage credits.
+View project analytics.
+Manage profile.
+Configure privacy settings.
+Premium User
+
+Includes every Registered User capability plus:
+
+Higher upload limits.
+Larger storage quotas.
+Priority AI processing.
+Premium gallery themes.
+Custom branding.
+Advanced analytics.
+Password-protected galleries.
+Gallery expiration controls.
+Custom domains (future).
+Watermark controls.
+Team collaboration (future).
+Administrator
+
+Has unrestricted administrative access.
+
+Capabilities include:
+
+User management.
+Credit management.
+Project moderation.
+Theme management.
+AI model management.
+Queue monitoring.
+Audit logs.
+Security monitoring.
+Database maintenance.
+System configuration.
+Health monitoring.
+Storage monitoring.
+Error monitoring.
+Analytics dashboard.
+Backup management.
+
+Administrative interfaces must remain isolated from standard user interfaces.
+
+2.3 Authentication
+
+The authentication system shall include:
+
+Sign Up
+Login
+Logout
+Forgot Password
+Reset Password
+Email Verification
+Session Management
+Remember Me
+Device Management
+Multi-device Sessions
+Secure Token Refresh
+
+Passwords shall never be stored in plain text.
+
+Sessions shall remain secure across browser refreshes.
+
+2.4 Landing Page
+
+The landing page is the public face of Nebula.
+
+It must immediately communicate the product's value.
+
+Sections include:
+
+Hero
+
+Features
+
+How It Works
+
+AI Capabilities
+
+Gallery Showcase
+
+Supported Styles
+
+Pricing
+
+FAQ
+
+Testimonials (future)
+
+Statistics
+
+Call to Action
+
+Footer
+
+The landing page shall be fully responsive and optimized for performance.
+
+2.5 Dashboard
+
+After login, users enter a personalized dashboard.
+
+Dashboard includes:
+
+Recent Projects
+
+Continue Editing
+
+Upload Media
+
+Recent Galleries
+
+Credit Balance
+
+Daily Rewards
+
+Notifications
+
+Activity
+
+Storage Usage
+
+Analytics Summary
+
+Quick Actions
+
+Settings Shortcut
+
+Help Center
+
+Search
+
+2.6 Media Upload
+
+The upload system must support:
+
+Single Image
+
+Multiple Images
+
+Single Video
+
+Multiple Videos
+
+Entire Folder Upload
+
+Drag-and-Drop
+
+Clipboard Paste (future)
+
+Cloud Import (future)
+
+Mobile Upload
+
+Camera Upload
+
+Resume Interrupted Uploads
+
+Retry Failed Uploads
+
+Supported formats shall include major image and video standards.
+
+Invalid or corrupted files shall be rejected with meaningful feedback.
+
+2.7 Upload Validation
+
+Before processing begins:
+
+Validate:
+
+File integrity.
+File type.
+File size.
+Malware status (if integrated).
+Duplicate uploads.
+Corrupted metadata.
+Unsupported codecs.
+Broken media.
+Missing frames.
+Damaged EXIF.
+
+Users must receive clear explanations for rejected files.
+
+2.8 Project Creation
+
+Each upload creates a Project.
+
+A project contains:
+
+Project Name
+
+Description
+
+Media Collection
+
+Analysis Results
+
+Theme
+
+Animation Settings
+
+Privacy Settings
+
+Share Settings
+
+Generated Gallery
+
+Analytics
+
+Version History
+
+Projects remain editable until the user publishes a gallery.
+
+2.9 AI Media Analysis
+
+Every uploaded asset shall be analyzed automatically.
+
+Analysis includes:
+
+Metadata Extraction
+
+EXIF Parsing
+
+GPS Extraction
+
+Timestamp Extraction
+
+Camera Information
+
+Lens Information
+
+Device Information
+
+Color Palette
+
+Dominant Colors
+
+Object Detection
+
+Face Detection
+
+Face Recognition
+
+Scene Recognition
+
+Landmark Recognition
+
+Building Recognition
+
+Animal Recognition
+
+Vehicle Recognition
+
+Food Recognition
+
+Text Recognition (OCR)
+
+Image Caption Generation
+
+Image Quality Assessment
+
+Duplicate Detection
+
+Similarity Detection
+
+Blur Detection
+
+Orientation Detection
+
+Video Scene Detection
+
+Video Frame Analysis
+
+Video Thumbnail Selection
+
+Event Clustering
+
+Location Clustering
+
+Time Clustering
+
+Semantic Tagging
+
+Automatic Album Suggestions
+
+Every result must be stored for future search and gallery generation.
+
+2.10 Project Timeline
+
+Nebula automatically constructs an intelligent timeline.
+
+Media should be grouped by:
+
+Date
+
+Time
+
+Location
+
+People
+
+Events
+
+Trips
+
+Occasions
+
+Custom Collections
+
+Users may edit these groupings manually.
+
+2.11 Search
+
+Search must operate across:
+
+Project Names
+
+File Names
+
+People
+
+Objects
+
+Places
+
+Landmarks
+
+Dates
+
+Events
+
+Tags
+
+Captions
+
+Metadata
+
+Locations
+
+Search results should appear instantly where practical and support filtering and sorting.
+
+2.12 Gallery Builder
+
+Users shall be able to configure:
+
+Theme
+
+Layout
+
+Typography
+
+Accent Colors
+
+Animations
+
+Transitions
+
+Background Music
+
+Intro Screen
+
+Outro Screen
+
+Story Order
+
+Navigation Style
+
+Privacy
+
+Downloads
+
+Sharing
+
+Branding
+
+Gallery generation shall remain non-destructive; users can regenerate with different settings without altering original uploads.
+
+2.13 Gallery Preview
+
+Before publication:
+
+Users must receive a complete interactive preview.
+
+The preview must accurately represent the final gallery.
+
+No credits are consumed during preview generation.
+
+Users may return to previous steps, modify settings, and preview again.
+
+Navigation must include clear Next, Back, Save Draft, Cancel, and Publish actions where appropriate.
+
+2.14 Credit System
+
+Business rules:
+
+Every new account receives one free gallery generation per day.
+Each daily login grants additional standard generation credits.
+Credits accumulate unless an administrator or future policy removes them.
+Credits are displayed prominently in the dashboard.
+
+Credits are deducted only after:
+
+AI processing completes successfully.
+Gallery preview is available.
+The user reviews the preview.
+The user explicitly confirms publication.
+The public gallery is generated successfully.
+The shareable link is created successfully.
+
+Credits are not deducted for:
+
+Upload failures.
+Processing failures.
+AI errors.
+Preview failures.
+Network interruptions.
+Browser crashes.
+User cancellations.
+Internal server errors.
+
+The credit system must be transaction-safe and prevent duplicate deductions under concurrent requests.
+
+2.15 Shareable Gallery
+
+Publishing generates a unique shareable link.
+
+The public gallery must:
+
+Load quickly.
+Be responsive.
+Support images and videos.
+Preserve media quality within optimization limits.
+Support keyboard and touch navigation.
+Provide smooth animations and transitions.
+Offer privacy controls selected by the owner.
+2.16 Analytics
+
+Gallery owners can view:
+
+Total Views
+
+Unique Visitors
+
+Device Breakdown
+
+Browser Breakdown
+
+Country Distribution
+
+Popular Media
+
+Session Duration
+
+Interaction Events
+
+Downloads (if enabled)
+
+Traffic Sources (future)
+
+Analytics should be privacy-conscious and configurable.
+
+2.17 Notifications
+
+Users receive notifications for:
+
+Upload Completion
+
+Analysis Completion
+
+Gallery Generation
+
+Credit Updates
+
+Daily Rewards
+
+Security Events
+
+Password Changes
+
+Storage Limits
+
+System Announcements
+
+2.18 Error Handling
+
+Every user-facing error must include:
+
+A clear explanation.
+The reason (when safe to disclose).
+Suggested corrective action.
+Retry options where appropriate.
+Recovery without unnecessary data loss.
+
+The application must avoid generic messages such as "Something went wrong."
+
+Functional Completion Criteria
+
+This section is considered complete only when every described capability is fully implemented, integrated with related subsystems, covered by automated and manual tests, and validated against the defined business rules. No feature may exist in isolation; each must operate consistently within the overall Nebula platform.

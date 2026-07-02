@@ -1,0 +1,58 @@
+.spinner {
+  border: 3px solid var(--color-border);
+  border-bottom-color: var(--color-primary);
+  border-radius: var(--radius-full);
+  display: inline-block;
+  animation: spin 1s linear infinite;
+  box-sizing: border-box;
+}
+
+.spinner-sm {
+  width: 20px;
+  height: 20px;
+  border-width: 2px;
+}
+
+.spinner-md {
+  width: 40px;
+  height: 40px;
+}
+
+.spinner-lg {
+  width: 64px;
+  height: 64px;
+  border-width: 4px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+/* Skeleton Loading Placeholder */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-surface-hover) 25%,
+    var(--color-border) 37%,
+    var(--color-bg-surface-hover) 63%
+  );
+  background-size: 400% 100%;
+  animation: skeleton-loading 1.4s ease infinite;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
