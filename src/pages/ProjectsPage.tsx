@@ -117,7 +117,13 @@ export default function ProjectsPage() {
             <Card
               key={project.id}
               style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)', cursor: 'pointer' }}
-              onClick={() => navigate(`/projects/${project.id}/upload`)}
+              onClick={() => {
+                if (project.mediaCount > 0 || project.status !== 'draft') {
+                  navigate(`/projects/${project.id}`);
+                } else {
+                  navigate(`/projects/${project.id}/upload`);
+                }
+              }}
             >
               {/* Cover gradient placeholder */}
               <div style={{

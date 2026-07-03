@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth, useNotification } from '../providers';
 import { useUploadQueue } from '../hooks/useUploadQueue';
@@ -14,8 +14,21 @@ export default function UploadPage() {
   const { user } = useAuth();
   const { showToast } = useNotification();
   
+  const [project, setProject] = useState<any>(null);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load project details
+  useEffect(() => {
+    async function loadProject() {
+      if (!projectId) return;
+      const res = await api.projects.getById(projectId);
+      if (res.success && res.data) {
+        setProject(res.data);
+      }
+    }
+    loadProject();
+  }, [projectId]);
 
   // Define upload completed callback
   const handleUploadSuccess = async (completedFiles: any[]) => {
@@ -108,6 +121,31 @@ export default function UploadPage() {
           Ingest images and videos. Upload size limit is <strong style={{ color: 'var(--color-text-primary)' }}>{maxUploadSizeMB} MB</strong> per file.
         </p>
       </header>
+
+      {/* Already Uploaded Banner */}
+      {project && project.mediaCount > 0 && (
+        <Card style={{
+          background: 'var(--color-bg-surface-hover)',
+          border: '1px solid var(--color-primary)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: 'var(--spacing-md)',
+          margin: 0
+        }}>
+          <div>
+            <h4 style={{ margin: '0 0 4px 0', color: 'var(--color-text-primary)' }}>
+              Project contains {project.mediaCount} uploaded files
+            </h4>
+            <p style={{ margin: 0, fontSize: 'var(--font-size-caption)', color: 'var(--color-text-secondary)' }}>
+              You have already uploaded media. You can proceed directly to AI processing and review.
+            </p>
+          </div>
+          <Button variant="primary" onClick={() => navigate(`/projects/${projectId}`)}>
+            Proceed to Review ➔
+          </Button>
+        </Card>
+      )}
 
       {/* Drag & Drop Zone */}
       <div

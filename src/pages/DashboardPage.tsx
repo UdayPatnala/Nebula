@@ -194,7 +194,13 @@ export default function DashboardPage() {
               {recentProjects.map((proj) => (
                 <div 
                   key={proj.id}
-                  onClick={() => navigate(`/projects/${proj.id}/upload`)}
+                  onClick={() => {
+                    if (proj.mediaCount > 0 || proj.status !== 'draft') {
+                      navigate(`/projects/${proj.id}`);
+                    } else {
+                      navigate(`/projects/${proj.id}/upload`);
+                    }
+                  }}
                   style={{
                     display: 'flex',
                     justifyContent: 'space-between',
