@@ -86,7 +86,8 @@ export default function AppShell() {
           >
             ☰
           </button>
-          <Link to="/dashboard" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <Link to="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)', textDecoration: 'none', color: 'inherit' }}>
+            <img src="/favicon.svg" alt="Nebula Logo" style={{ width: '28px', height: '28px' }} />
             <span style={{ 
               fontWeight: 'var(--weight-bold)', 
               fontSize: '1.5rem', 
