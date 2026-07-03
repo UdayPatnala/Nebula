@@ -36,15 +36,12 @@ export default function LoginPage() {
 
     setIsLoading(true);
     try {
-      // Simulate real-time brute force delay
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      
       // Determine role from domain to allow testing Administrator profiles easily:
       // e.g. admin@nebula.ai log in as Administrator role, else regular user.
       const isDomainAdmin = email.toLowerCase().startsWith('admin');
       const role = isDomainAdmin ? 'administrator' : 'registered_user';
       
-      await login(email, role);
+      await login(email, password, false, undefined, role);
       showToast('Welcome back to Nebula!', 'success');
       navigate('/dashboard');
     } catch (err: any) {

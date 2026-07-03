@@ -1,4 +1,17 @@
 import type { Project } from '../types/project';
+import { auth, db, isFirebaseConfigured } from '../config/firebase';
+import { 
+  collection, 
+  doc, 
+  getDocs, 
+  getDoc, 
+  addDoc, 
+  updateDoc, 
+  query, 
+  where, 
+  orderBy, 
+  deleteDoc
+} from 'firebase/firestore';
 
 // Storage Keys
 const PROJECTS_KEY = 'nebula_mock_projects';
@@ -43,7 +56,7 @@ const seedProjects: Project[] = [
         id: 'img_1',
         name: 'beach_sunset.jpg',
         type: 'image',
-        size: 1024 * 1024 * 2.5, // 2.5 MB
+        size: 1024 * 1024 * 2.5,
         url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
         uploadedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
         metadata: { tags: ['beach', 'sunset', 'nature'], facesCount: 0, location: 'California' }
@@ -83,12 +96,11 @@ const seedAuditLogs: AuditLog[] = [
   { id: 'lg_1', actor: 'System Daemon', action: 'Daily cron cleanup', details: 'Cleaned up 0 orphaned temporary uploads', createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString() }
 ];
 
-class MockDatabase {
+class HybridDatabase {
   private simulateLatency<T>(data: T, ms = 200): Promise<T> {
     return new Promise((resolve) => setTimeout(() => resolve(data), ms));
   }
 
-  // Getters & Setters with localStorage persistence
   private getData<T>(key: string, seed: T): T {
     const raw = localStorage.getItem(key);
     if (!raw) {
@@ -102,24 +114,93 @@ class MockDatabase {
     localStorage.setItem(key, JSON.stringify(value));
   }
 
+  private get userId() {
+    return auth?.currentUser?.uid || 'user_123';
+  }
+
   // Project Collection APIs
-  getProjects(): Promise<Project[]> {
+  async getProjects(): Promise<Project[]> {
+    if (isFirebaseConfigured && db) {
+      try {
+        const q = query(
+          collection(db, 'projects'), 
+          where('ownerId', '==', this.userId),
+          where('archived', '==', false)
+        );
+        const snap = await getDocs(q);
+        return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
+      } catch (err) {
+        console.error('Firestore getProjects failed:', err);
+      }
+    }
+
     const projects = this.getData<Project[]>(PROJECTS_KEY, seedProjects);
     return this.simulateLatency(projects.filter(p => !p.archived));
   }
 
-  getArchivedProjects(): Promise<Project[]> {
+  async getArchivedProjects(): Promise<Project[]> {
+    if (isFirebaseConfigured && db) {
+      try {
+        const q = query(
+          collection(db, 'projects'), 
+          where('ownerId', '==', this.userId),
+          where('archived', '==', true)
+        );
+        const snap = await getDocs(q);
+        return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
+      } catch (err) {
+        console.error('Firestore getArchivedProjects failed:', err);
+      }
+    }
+
     const projects = this.getData<Project[]>(PROJECTS_KEY, seedProjects);
     return this.simulateLatency(projects.filter(p => p.archived));
   }
 
-  getProjectById(id: string): Promise<Project | null> {
+  async getProjectById(id: string): Promise<Project | null> {
+    if (isFirebaseConfigured && db) {
+      try {
+        const docRef = doc(db, 'projects', id);
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.ownerId === this.userId) {
+            return { id: snap.id, ...data } as Project;
+          }
+        }
+        return null;
+      } catch (err) {
+        console.error('Firestore getProjectById failed:', err);
+      }
+    }
+
     const projects = this.getData<Project[]>(PROJECTS_KEY, seedProjects);
     const p = projects.find((proj) => proj.id === id) || null;
     return this.simulateLatency(p);
   }
 
-  createProject(name: string): Promise<Project> {
+  async createProject(name: string): Promise<Project> {
+    if (isFirebaseConfigured && db) {
+      try {
+        const newProj = {
+          name,
+          ownerId: this.userId,
+          status: 'draft',
+          media: [],
+          mediaCount: 0,
+          creditsConsumed: 0,
+          archived: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        const docRef = await addDoc(collection(db, 'projects'), newProj);
+        await this.logAction('User', 'Project Creation', `Created project ${name}`);
+        return { id: docRef.id, ...newProj } as Project;
+      } catch (err) {
+        console.error('Firestore createProject failed:', err);
+      }
+    }
+
     const projects = this.getData<Project[]>(PROJECTS_KEY, seedProjects);
     const newProj: Project = {
       id: `proj_${Math.random().toString(36).substr(2, 9)}`,
@@ -138,7 +219,19 @@ class MockDatabase {
     return this.simulateLatency(newProj);
   }
 
-  updateProject(id: string, updates: Partial<Project>): Promise<Project | null> {
+  async updateProject(id: string, updates: Partial<Project>): Promise<Project | null> {
+    if (isFirebaseConfigured && db) {
+      try {
+        const docRef = doc(db, 'projects', id);
+        const updatedFields = { ...updates, updatedAt: new Date().toISOString() };
+        await updateDoc(docRef, updatedFields);
+        const snap = await getDoc(docRef);
+        return { id: snap.id, ...snap.data() } as Project;
+      } catch (err) {
+        console.error('Firestore updateProject failed:', err);
+      }
+    }
+
     const projects = this.getData<Project[]>(PROJECTS_KEY, seedProjects);
     let updatedProj: Project | null = null;
     const next = projects.map((p) => {
@@ -152,7 +245,18 @@ class MockDatabase {
     return this.simulateLatency(updatedProj);
   }
 
-  deleteProject(id: string): Promise<boolean> {
+  async deleteProject(id: string): Promise<boolean> {
+    if (isFirebaseConfigured && db) {
+      try {
+        const docRef = doc(db, 'projects', id);
+        await deleteDoc(docRef);
+        await this.logAction('User', 'Project Deletion', `Deleted project with ID: ${id}`);
+        return true;
+      } catch (err) {
+        console.error('Firestore deleteProject failed:', err);
+      }
+    }
+
     const projects = this.getData<Project[]>(PROJECTS_KEY, seedProjects);
     const next = projects.filter((p) => p.id !== id);
     this.setData(PROJECTS_KEY, next);
@@ -161,12 +265,41 @@ class MockDatabase {
   }
 
   // Credit Transactions APIs
-  getTransactions(): Promise<CreditTransaction[]> {
+  async getTransactions(): Promise<CreditTransaction[]> {
+    if (isFirebaseConfigured && db) {
+      try {
+        const q = query(
+          collection(db, 'transactions'), 
+          where('userId', '==', this.userId)
+        );
+        const snap = await getDocs(q);
+        return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as CreditTransaction));
+      } catch (err) {
+        console.error('Firestore getTransactions failed:', err);
+      }
+    }
+
     const txs = this.getData<CreditTransaction[]>(TRANSACTIONS_KEY, seedTransactions);
     return this.simulateLatency(txs);
   }
 
-  addTransaction(amount: number, type: CreditTransaction['type'], description: string): Promise<CreditTransaction> {
+  async addTransaction(amount: number, type: CreditTransaction['type'], description: string): Promise<CreditTransaction> {
+    if (isFirebaseConfigured && db) {
+      try {
+        const tx = {
+          userId: this.userId,
+          amount,
+          type,
+          description,
+          createdAt: new Date().toISOString()
+        };
+        const docRef = await addDoc(collection(db, 'transactions'), tx);
+        return { id: docRef.id, ...tx } as CreditTransaction;
+      } catch (err) {
+        console.error('Firestore addTransaction failed:', err);
+      }
+    }
+
     const txs = this.getData<CreditTransaction[]>(TRANSACTIONS_KEY, seedTransactions);
     const tx: CreditTransaction = {
       id: `tx_${Math.random().toString(36).substr(2, 9)}`,
@@ -181,12 +314,35 @@ class MockDatabase {
   }
 
   // Notification collection APIs
-  getNotifications(): Promise<SystemNotification[]> {
+  async getNotifications(): Promise<SystemNotification[]> {
+    if (isFirebaseConfigured && db) {
+      try {
+        const q = query(
+          collection(db, 'notifications'), 
+          where('userId', '==', this.userId)
+        );
+        const snap = await getDocs(q);
+        return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as SystemNotification));
+      } catch (err) {
+        console.error('Firestore getNotifications failed:', err);
+      }
+    }
+
     const notifications = this.getData<SystemNotification[]>(NOTIFICATIONS_KEY, seedNotifications);
     return this.simulateLatency(notifications);
   }
 
-  markNotificationRead(id: string): Promise<boolean> {
+  async markNotificationRead(id: string): Promise<boolean> {
+    if (isFirebaseConfigured && db) {
+      try {
+        const docRef = doc(db, 'notifications', id);
+        await updateDoc(docRef, { read: true });
+        return true;
+      } catch (err) {
+        console.error('Firestore markNotificationRead failed:', err);
+      }
+    }
+
     const notifications = this.getData<SystemNotification[]>(NOTIFICATIONS_KEY, seedNotifications);
     const next = notifications.map((n) => n.id === id ? { ...n, read: true } : n);
     this.setData(NOTIFICATIONS_KEY, next);
@@ -194,12 +350,36 @@ class MockDatabase {
   }
 
   // Admin Logs collection APIs
-  getAuditLogs(): Promise<AuditLog[]> {
+  async getAuditLogs(): Promise<AuditLog[]> {
+    if (isFirebaseConfigured && db) {
+      try {
+        const q = query(collection(db, 'audit_logs'), orderBy('createdAt', 'desc'));
+        const snap = await getDocs(q);
+        return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as AuditLog));
+      } catch (err) {
+        console.error('Firestore getAuditLogs failed:', err);
+      }
+    }
+
     const logs = this.getData<AuditLog[]>(AUDIT_LOGS_KEY, seedAuditLogs);
     return this.simulateLatency(logs);
   }
 
-  logAction(actor: string, action: string, details: string): void {
+  async logAction(actor: string, action: string, details: string): Promise<void> {
+    if (isFirebaseConfigured && db) {
+      try {
+        await addDoc(collection(db, 'audit_logs'), {
+          actor,
+          action,
+          details,
+          createdAt: new Date().toISOString()
+        });
+        return;
+      } catch (err) {
+        console.error('Firestore logAction failed:', err);
+      }
+    }
+
     const logs = this.getData<AuditLog[]>(AUDIT_LOGS_KEY, seedAuditLogs);
     const newLog: AuditLog = {
       id: `lg_${Math.random().toString(36).substr(2, 9)}`,
@@ -213,4 +393,4 @@ class MockDatabase {
   }
 }
 
-export const mockDb = new MockDatabase();
+export const mockDb = new HybridDatabase();

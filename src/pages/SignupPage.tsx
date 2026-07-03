@@ -50,11 +50,8 @@ export default function SignupPage() {
 
     setIsLoading(true);
     try {
-      // Simulate network request
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      
       // Auto-authenticate user
-      await login(email);
+      await login(email, password, true, name);
       showToast('Registration successful! Welcome to Nebula!', 'success');
       navigate('/onboarding'); // Redirect to first-time onboarding tutorial (Section 6.5)
     } catch (err: any) {
