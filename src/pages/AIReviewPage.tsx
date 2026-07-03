@@ -38,6 +38,14 @@ export default function AIReviewPage() {
   const [selectedAsset, setSelectedAsset] = useState<MediaAsset | null>(null);
   const [newTag, setNewTag] = useState('');
   
+  // Edit Metadata Form States
+  const [editCaption, setEditCaption] = useState('');
+  const [editLocation, setEditLocation] = useState('');
+  const [editCamera, setEditCamera] = useState('');
+  const [editGPS, setEditGPS] = useState('');
+  const [editFacesCount, setEditFacesCount] = useState(0);
+  const [isSavingMeta, setIsSavingMeta] = useState(false);
+
   // Person rename state
   const [renamingFaceId, setRenamingFaceId] = useState<string | null>(null);
   const [renamingFaceName, setRenamingFaceName] = useState('');
@@ -49,7 +57,6 @@ export default function AIReviewPage() {
       setLoading(true);
       const res = await api.projects.getById(projectId);
       if (res.success && res.data) {
-        // If project has no media loaded (mocking fallback media assets for demo)
         const projData = res.data;
         if (projData.media.length === 0) {
           projData.media = [
@@ -60,7 +67,14 @@ export default function AIReviewPage() {
               size: 2 * 1024 * 1024,
               url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80',
               uploadedAt: new Date().toISOString(),
-              metadata: { tags: ['beach', 'sunset', 'california'], facesCount: 0, location: 'Los Angeles', caption: 'Sunset over Santa Monica beach' }
+              metadata: { 
+                tags: ['beach', 'sunset', 'california'], 
+                facesCount: 0, 
+                location: 'Los Angeles', 
+                caption: 'Sunset over Santa Monica beach',
+                camera: 'Apple iPhone 15 Pro',
+                gps: '34.0194° N, 118.4912° W'
+              }
             },
             {
               id: 'asset_2',
@@ -69,7 +83,14 @@ export default function AIReviewPage() {
               size: 1.5 * 1024 * 1024,
               url: 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=600&q=80',
               uploadedAt: new Date().toISOString(),
-              metadata: { tags: ['people', 'party', 'dinner'], facesCount: 2, location: 'San Francisco', caption: 'Friends enjoying dinner' }
+              metadata: { 
+                tags: ['people', 'party', 'dinner'], 
+                facesCount: 2, 
+                location: 'San Francisco', 
+                caption: 'Friends enjoying dinner',
+                camera: 'Sony Alpha 7R V',
+                gps: '37.7749° N, 122.4194° W'
+              }
             },
             {
               id: 'asset_3',
@@ -78,7 +99,14 @@ export default function AIReviewPage() {
               size: 15 * 1024 * 1024,
               url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80',
               uploadedAt: new Date().toISOString(),
-              metadata: { tags: ['mountain', 'hike', 'climbing'], facesCount: 1, location: 'Yosemite', caption: 'Scenic valley overlook' }
+              metadata: { 
+                tags: ['mountain', 'hike', 'climbing'], 
+                facesCount: 1, 
+                location: 'Yosemite', 
+                caption: 'Scenic valley overlook',
+                camera: 'GoPro HERO 12 Black',
+                gps: '37.8651° N, 119.5383° W'
+              }
             }
           ];
           projData.mediaCount = projData.media.length;
@@ -90,6 +118,17 @@ export default function AIReviewPage() {
     }
     loadProject();
   }, [projectId]);
+
+  // Synchronize form states on asset selection
+  useEffect(() => {
+    if (selectedAsset) {
+      setEditCaption(selectedAsset.metadata?.caption || '');
+      setEditLocation(selectedAsset.metadata?.location || '');
+      setEditCamera(selectedAsset.metadata?.camera || 'Apple iPhone 15 Pro');
+      setEditGPS(selectedAsset.metadata?.gps || '34.0194° N, 118.4912° W');
+      setEditFacesCount(selectedAsset.metadata?.facesCount || 0);
+    }
+  }, [selectedAsset]);
 
   const handleAddTag = () => {
     if (!selectedAsset || !newTag.trim()) return;
@@ -127,12 +166,58 @@ export default function AIReviewPage() {
     showToast(`Removed tag "${tagToRemove}"`, 'info');
   };
 
-  const updateAssetInProject = (updatedAsset: MediaAsset) => {
+  const updateAssetInProject = async (updatedAsset: MediaAsset) => {
     if (!project || !projectId) return;
     const updatedMedia = project.media.map((a) => a.id === updatedAsset.id ? updatedAsset : a);
     const updatedProj = { ...project, media: updatedMedia };
     setProject(updatedProj);
-    api.projects.update(projectId, updatedProj);
+    await api.projects.update(projectId, updatedProj);
+  };
+
+  const handleSaveMetadata = async () => {
+    if (!selectedAsset || !project || !projectId) return;
+    setIsSavingMeta(true);
+    
+    const updatedAsset: MediaAsset = {
+      ...selectedAsset,
+      metadata: {
+        ...selectedAsset.metadata,
+        caption: editCaption.trim(),
+        location: editLocation.trim(),
+        camera: editCamera.trim(),
+        gps: editGPS.trim(),
+        facesCount: editFacesCount
+      }
+    };
+
+    setSelectedAsset(updatedAsset);
+    await updateAssetInProject(updatedAsset);
+    setIsSavingMeta(false);
+    showToast('Image descriptors and original details updated.', 'success');
+  };
+
+  const handleDeleteAsset = async (asset: MediaAsset) => {
+    if (!project || !projectId) return;
+    if (!confirm(`Are you sure you want to remove "${asset.name}" from this project? This will decrement the project's media count.`)) return;
+
+    const updatedMedia = project.media.filter((m) => m.id !== asset.id);
+    const updatedProj = {
+      ...project,
+      media: updatedMedia,
+      mediaCount: updatedMedia.length
+    };
+
+    setProject(updatedProj);
+    if (selectedAsset?.id === asset.id) {
+      setSelectedAsset(null);
+    }
+
+    try {
+      await api.projects.update(projectId, updatedProj);
+      showToast(`Removed "${asset.name}" from project.`, 'success');
+    } catch (err) {
+      showToast('Failed to delete asset.', 'error');
+    }
   };
 
   const handleRenameFace = (id: string, name: string) => {
@@ -212,6 +297,36 @@ export default function AIReviewPage() {
             >
               <div style={{ height: '180px', width: '100%', overflow: 'hidden', background: '#000', position: 'relative' }}>
                 <img src={asset.url} alt={asset.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                
+                {/* Delete overlay button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteAsset(asset);
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: '8px',
+                    right: '8px',
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '50%',
+                    background: 'rgba(239, 68, 68, 0.95)',
+                    border: 'none',
+                    color: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    fontSize: '0.8rem',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                    zIndex: 10
+                  }}
+                  title="Delete media from project"
+                >
+                  🗑️
+                </button>
+
                 {asset.type === 'video' && (
                   <span style={{ position: 'absolute', bottom: '8px', right: '8px', background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: '0.65rem', padding: '2px 6px', borderRadius: 'var(--radius-sm)' }}>
                     ▶ VIDEO
@@ -299,23 +414,23 @@ export default function AIReviewPage() {
           <h3 style={{ margin: 0 }}>Story Event Timeline</h3>
           <div style={{ display: 'flex', flexDirection: 'column', borderLeft: '2px solid var(--color-primary)', paddingLeft: 'var(--spacing-lg)', gap: 'var(--spacing-lg)', marginLeft: 'var(--spacing-xs)' }}>
             {[
-              { time: '10:14 AM', title: 'Arrival at Santa Monica', desc: 'Ingested beach scenery and sunset markers.', location: 'Los Angeles, CA' },
-              { time: '01:30 PM', title: 'Lunch Gathering', desc: 'Identified dining layout and 4 unique faces.', location: 'Pier View Diner' },
-              { time: '05:45 PM', title: 'Sunset Views', desc: 'Analyzed high-quality colors and sunset sky filters.', location: 'Ocean Overlook' }
-            ].map((event) => (
-              <div key={event.title} style={{ position: 'relative' }}>
+              { time: 'Day 1 - Morning', title: 'Arrival & Scenic Exploration', desc: 'Ingested media highlights broad landscape shots, mountain ranges, and initial group arrival.' },
+              { time: 'Day 1 - Evening', title: 'Sunset Social Event', desc: 'Clustered media tags dinner, coastal beaches, and close portraits of guests.' },
+              { time: 'Day 2 - Afternoon', title: 'Mountain Trail Summit', desc: 'Climactic sequence featuring active hiking videos, peak views, and outdoors tags.' }
+            ].map((event, idx) => (
+              <div key={idx} style={{ position: 'relative' }}>
                 <div style={{
                   position: 'absolute',
-                  left: '-29px',
+                  left: 'calc(-1 * var(--spacing-lg) - 7px)',
                   top: '4px',
                   width: '12px',
                   height: '12px',
-                  borderRadius: 'var(--radius-full)',
-                  background: 'var(--color-bg-base)',
-                  border: '3px solid var(--color-primary)'
+                  borderRadius: '50%',
+                  background: 'var(--color-primary)',
+                  border: '2px solid var(--color-bg-base)'
                 }} />
-                <span style={{ fontSize: 'var(--font-size-caption)', color: 'var(--color-primary)', fontWeight: 'bold' }}>
-                  {event.time} — {event.location}
+                <span style={{ fontSize: 'var(--font-size-caption)', color: 'var(--color-primary)', fontWeight: 'var(--weight-semibold)' }}>
+                  {event.time}
                 </span>
                 <h4 style={{ margin: 'var(--spacing-xxs) 0' }}>{event.title}</h4>
                 <p style={{ margin: 0, fontSize: 'var(--font-size-caption)', color: 'var(--color-text-secondary)' }}>
@@ -331,31 +446,61 @@ export default function AIReviewPage() {
       <Modal
         isOpen={!!selectedAsset}
         onClose={() => setSelectedAsset(null)}
-        title="Asset AI Descriptors"
-        footer={<Button variant="secondary" onClick={() => setSelectedAsset(null)}>Close</Button>}
+        title="Edit Image Descriptors"
+        footer={
+          <div style={{ display: 'flex', gap: 'var(--spacing-xs)', justifyContent: 'flex-end', width: '100%' }}>
+            <Button variant="secondary" onClick={() => setSelectedAsset(null)}>Cancel</Button>
+            <Button variant="primary" onClick={handleSaveMetadata} loading={isSavingMeta}>Save Changes</Button>
+          </div>
+        }
       >
         {selectedAsset && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
             <img
               src={selectedAsset.url}
               alt={selectedAsset.name}
-              style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: 'var(--radius-md)' }}
+              style={{ width: '100%', height: '220px', objectFit: 'cover', borderRadius: 'var(--radius-md)' }}
             />
-            
-            {/* Descriptive caption */}
+
+            {/* Filename (Read Only) */}
             <div>
               <span style={{ fontSize: 'var(--font-size-caption)', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>
-                AI Semantic Summary
+                File Name
               </span>
-              <p style={{ margin: 'var(--spacing-xxs) 0 0 0', fontWeight: 'var(--weight-medium)' }}>
-                {selectedAsset.metadata?.caption || 'No caption generated.'}
+              <p style={{ margin: '4px 0 0 0', fontWeight: 'var(--weight-semibold)', fontSize: '0.95rem' }}>
+                {selectedAsset.name} ({(selectedAsset.size / (1024 * 1024)).toFixed(2)} MB)
               </p>
+            </div>
+            
+            {/* Descriptive caption (Editable) */}
+            <div>
+              <label style={{ fontSize: 'var(--font-size-caption)', fontWeight: 'var(--weight-medium)', color: 'var(--color-text-primary)' }}>
+                AI Semantic Summary / Caption
+              </label>
+              <textarea
+                value={editCaption}
+                onChange={(e) => setEditCaption(e.target.value)}
+                rows={2}
+                style={{
+                  width: '100%',
+                  padding: '8px 10px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px solid var(--color-border)',
+                  background: 'var(--color-bg-base)',
+                  color: 'var(--color-text-primary)',
+                  fontSize: 'var(--font-size-body)',
+                  fontFamily: 'inherit',
+                  outline: 'none',
+                  resize: 'vertical',
+                  marginTop: '4px'
+                }}
+              />
             </div>
 
             {/* Inferred Tags */}
             <div>
               <span style={{ fontSize: 'var(--font-size-caption)', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>
-                Recognized Tags
+                Image Vision Tags
               </span>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--spacing-xs)', marginTop: 'var(--spacing-xs)' }}>
                 {selectedAsset.metadata?.tags?.map((tag) => (
@@ -375,37 +520,54 @@ export default function AIReviewPage() {
               </div>
               <div style={{ display: 'flex', gap: 'var(--spacing-xs)', marginTop: 'var(--spacing-xs)' }}>
                 <Input
-                  placeholder="Add customized tag..."
+                  placeholder="Type custom tag..."
                   value={newTag}
                   onChange={(e) => setNewTag(e.target.value)}
                   style={{ marginBottom: 0, height: '32px' }}
                 />
-                <Button variant="secondary" size="sm" onClick={handleAddTag}>Add</Button>
+                <Button variant="secondary" size="sm" onClick={handleAddTag}>Add Tag</Button>
               </div>
             </div>
 
-            {/* GPS coordinates & EXIF info */}
+            {/* GPS coordinates & EXIF info (Editable) */}
             <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: 'var(--spacing-sm)',
-              fontSize: 'var(--font-size-caption)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--spacing-xs)',
               background: 'var(--color-bg-surface-hover)',
-              padding: 'var(--spacing-sm)',
-              borderRadius: 'var(--radius-sm)',
+              padding: 'var(--spacing-md)',
+              borderRadius: 'var(--radius-md)',
               border: '1px solid var(--color-border)'
             }}>
-              <div>
-                <strong>Location:</strong> {selectedAsset.metadata?.location || 'Unknown'}
-              </div>
-              <div>
-                <strong>GPS:</strong> 34.0194° N, 118.4912° W
-              </div>
-              <div>
-                <strong>Camera:</strong> Apple iPhone 15 Pro
-              </div>
-              <div>
-                <strong>Date Ingested:</strong> {new Date(selectedAsset.uploadedAt).toLocaleDateString()}
+              <h4 style={{ margin: '0 0 4px 0', fontSize: '0.85rem', textTransform: 'uppercase', color: 'var(--color-text-secondary)' }}>
+                Original Metadata Details
+              </h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-sm)' }}>
+                <Input
+                  label="Captured Location"
+                  value={editLocation}
+                  onChange={(e) => setEditLocation(e.target.value)}
+                  style={{ marginBottom: 0 }}
+                />
+                <Input
+                  label="Camera Info"
+                  value={editCamera}
+                  onChange={(e) => setEditCamera(e.target.value)}
+                  style={{ marginBottom: 0 }}
+                />
+                <Input
+                  label="GPS Coordinates"
+                  value={editGPS}
+                  onChange={(e) => setEditGPS(e.target.value)}
+                  style={{ marginBottom: 0 }}
+                />
+                <Input
+                  label="Detected Faces"
+                  type="number"
+                  value={editFacesCount}
+                  onChange={(e) => setEditFacesCount(parseInt(e.target.value) || 0)}
+                  style={{ marginBottom: 0 }}
+                />
               </div>
             </div>
           </div>

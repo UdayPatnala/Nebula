@@ -19,6 +19,7 @@ interface AuthContextType {
   logout: () => Promise<void> | void;
   updateCredits: (amount: number) => Promise<void> | void;
   dailyCheckIn: () => Promise<boolean> | boolean;
+  updateUserFields: (fields: Partial<UserProfile>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -214,6 +215,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return true;
   };
 
+  const updateUserFields = async (fields: Partial<UserProfile>) => {
+    if (!user) return;
+    if (isFirebaseConfigured && db) {
+      const userRef = doc(db!, 'users', user.id);
+      await updateDoc(userRef, fields);
+      setUser((prev) => prev ? { ...prev, ...fields } : null);
+      return;
+    }
+    const updated = { ...user, ...fields };
+    setUser(updated);
+    localStorage.setItem('nebula-user', JSON.stringify(updated));
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -223,7 +237,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login,
         logout,
         updateCredits,
-        dailyCheckIn
+        dailyCheckIn,
+        updateUserFields
       }}
     >
       {children}

@@ -15,6 +15,8 @@ export interface MediaAsset {
     objects?: string[];
     location?: string;
     caption?: string;
+    camera?: string;
+    gps?: string;
   };
 }
 
