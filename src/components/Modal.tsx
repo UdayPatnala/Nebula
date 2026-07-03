@@ -7,6 +7,7 @@ interface ModalProps {
   title: string;
   children: ReactNode;
   footer?: ReactNode;
+  width?: string;
 }
 
 export default function Modal({
@@ -14,7 +15,8 @@ export default function Modal({
   onClose,
   title,
   children,
-  footer
+  footer,
+  width
 }: ModalProps) {
   
   useEffect(() => {
@@ -37,7 +39,7 @@ export default function Modal({
 
   return (
     <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content" style={width ? { maxWidth: width } : undefined} onClick={(e) => e.stopPropagation()}>
         <header className="modal-header">
           <h3 id="modal-title">{title}</h3>
           <button className="modal-close" onClick={onClose} aria-label="Close dialog">×</button>

@@ -447,6 +447,7 @@ export default function AIReviewPage() {
         isOpen={!!selectedAsset}
         onClose={() => setSelectedAsset(null)}
         title="Edit Image Descriptors"
+        width="600px"
         footer={
           <div style={{ display: 'flex', gap: 'var(--spacing-xs)', justifyContent: 'flex-end', width: '100%' }}>
             <Button variant="secondary" onClick={() => setSelectedAsset(null)}>Cancel</Button>
@@ -542,7 +543,7 @@ export default function AIReviewPage() {
               <h4 style={{ margin: '0 0 4px 0', fontSize: '0.85rem', textTransform: 'uppercase', color: 'var(--color-text-secondary)' }}>
                 Original Metadata Details
               </h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-sm)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-sm)' }}>
                 <Input
                   label="Captured Location"
                   value={editLocation}

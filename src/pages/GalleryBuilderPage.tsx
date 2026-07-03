@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useNotification } from '../providers';
 import { api } from '../api/client';
 import Button from '../components/Button';
@@ -9,6 +9,7 @@ import type { Project } from '../types/project';
 
 export default function GalleryBuilderPage() {
   const { projectId } = useParams<{ projectId: string }>();
+  const navigate = useNavigate();
   const { showToast } = useNotification();
 
   const [project, setProject] = useState<Project | null>(null);
@@ -125,6 +126,9 @@ export default function GalleryBuilderPage() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+          <Button variant="secondary" onClick={() => navigate(`/projects/${projectId}/preview`)}>
+            👁️ Live Preview
+          </Button>
           <Button variant="secondary" onClick={handleSaveConfig}>
             Save Draft
           </Button>
@@ -390,6 +394,13 @@ export default function GalleryBuilderPage() {
               }}
             >
               Copy
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => window.open(shareLink, '_blank')}
+            >
+              Open Gallery
             </Button>
           </div>
         </div>
