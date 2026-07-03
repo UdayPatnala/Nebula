@@ -25,13 +25,13 @@ export default function ProjectsPage() {
   const [newProjectName, setNewProjectName] = useState('');
   const [creating, setCreating] = useState(false);
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!newProjectName.trim()) {
       showToast('Project name is required.', 'error');
       return;
     }
     setCreating(true);
-    const result = createProject(newProjectName.trim());
+    const result = await createProject(newProjectName.trim());
     setCreating(false);
     if (result) {
       showToast(`Project "${result.name}" created!`, 'success');
@@ -43,9 +43,9 @@ export default function ProjectsPage() {
     }
   };
 
-  const handleDelete = (project: Project) => {
+  const handleDelete = async (project: Project) => {
     if (!confirm(`Delete "${project.name}"? This cannot be undone.`)) return;
-    deleteProject(project.id);
+    await deleteProject(project.id);
     showToast(`Project "${project.name}" deleted.`, 'success');
   };
 

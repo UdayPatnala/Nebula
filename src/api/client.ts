@@ -1,6 +1,8 @@
 import { mockDb } from '../services/mockDb';
 import type { Project } from '../types/project';
 import type { UserProfile, UserRole } from '../types/auth';
+import { auth, db, isFirebaseConfigured } from '../config/firebase';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 
 // Standard normalized response structure defined in Section 12.5
 export interface ApiResponse<T> {
@@ -15,6 +17,20 @@ export interface ApiResponse<T> {
 export const api = {
   auth: {
     async getCurrentUser(): Promise<ApiResponse<UserProfile | null>> {
+      if (isFirebaseConfigured && auth?.currentUser && db) {
+        try {
+          const docRef = doc(db!, 'users', auth.currentUser.uid);
+          const snap = await getDoc(docRef);
+          return {
+            success: snap.exists(),
+            data: snap.exists() ? (snap.data() as UserProfile) : null,
+            timestamp: new Date().toISOString()
+          };
+        } catch (err) {
+          console.error('Failed to get current user:', err);
+        }
+      }
+
       const raw = localStorage.getItem('nebula-user');
       const user = raw ? JSON.parse(raw) : null;
       return {
@@ -25,7 +41,6 @@ export const api = {
     },
 
     async login(email: string, role: UserRole = 'registered_user'): Promise<ApiResponse<UserProfile>> {
-      // Simulate API call to register/login
       const loggedInUser: UserProfile = {
         id: `usr_${Math.random().toString(36).substr(2, 9)}`,
         name: email.split('@')[0].toUpperCase(),
@@ -122,45 +137,72 @@ export const api = {
       };
     },
 
-    // Mock upload endpoint
     async uploadMedia(projectId: string, filesCount: number): Promise<ApiResponse<Project | null>> {
       const proj = await mockDb.getProjectById(projectId);
       if (!proj) {
         return { success: false, data: null, message: 'Project not found', timestamp: new Date().toISOString() };
       }
-      
+
+      // High quality landscape photos matching the design system
+      const samplePhotos = [
+        'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1472214222541-d510753a8707?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80'
+      ];
+
+      const currentMedia = proj.media || [];
+      const newMedia = Array.from({ length: filesCount }).map((_, index) => {
+        const id = `img_${Math.random().toString(36).substr(2, 9)}`;
+        const url = samplePhotos[(currentMedia.length + index) % samplePhotos.length];
+        return {
+          id,
+          name: `upload_${currentMedia.length + index + 1}.jpg`,
+          type: 'image' as const,
+          size: 1.5 * 1024 * 1024,
+          url,
+          uploadedAt: new Date().toISOString(),
+          metadata: {
+            tags: ['beach', 'nature', 'travel', 'people', 'scenic'],
+            facesCount: Math.floor(Math.random() * 3),
+            objects: ['sky', 'water', 'person', 'trees'],
+            location: 'California Coast',
+            caption: 'A beautiful memory from the journey.'
+          }
+        };
+      });
+
       const updated = await mockDb.updateProject(projectId, {
-        mediaCount: proj.mediaCount + filesCount,
-        updatedAt: new Date().toISOString()
+        mediaCount: (proj.mediaCount || 0) + filesCount,
+        media: [...currentMedia, ...newMedia]
       });
 
       return {
-        success: true,
+        success: !!updated,
         data: updated,
         timestamp: new Date().toISOString()
       };
     },
 
-    // Mock AI triggers
-    async runAIAnalysis(projectId: string): Promise<ApiResponse<Project | null>> {
+    async startAnalysis(projectId: string): Promise<ApiResponse<Project | null>> {
       const proj = await mockDb.getProjectById(projectId);
       if (!proj) {
         return { success: false, data: null, message: 'Project not found', timestamp: new Date().toISOString() };
       }
-
-      // Transition project status: analyzing -> ready
       await mockDb.updateProject(projectId, { status: 'analyzing' });
-      
-      // Simulate pipeline completion background task
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
+      // Simulate pipeline delay
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       const finalProject = await mockDb.updateProject(projectId, {
         status: 'ready',
-        creditsConsumed: proj.creditsConsumed + 30
+        creditsConsumed: (proj.creditsConsumed || 0) + 10
       });
 
       return {
-        success: true,
+        success: !!finalProject,
         data: finalProject,
         timestamp: new Date().toISOString()
       };
@@ -169,6 +211,22 @@ export const api = {
 
   credits: {
     async getBalance(): Promise<ApiResponse<number>> {
+      if (isFirebaseConfigured && auth?.currentUser && db) {
+        try {
+          const docRef = doc(db!, 'users', auth.currentUser.uid);
+          const snap = await getDoc(docRef);
+          if (snap.exists()) {
+            return {
+              success: true,
+              data: snap.data().credits ?? 0,
+              timestamp: new Date().toISOString()
+            };
+          }
+        } catch (err) {
+          console.error('Failed to get credit balance:', err);
+        }
+      }
+
       const raw = localStorage.getItem('nebula-user');
       const user = raw ? JSON.parse(raw) : null;
       return {
@@ -188,6 +246,39 @@ export const api = {
     },
 
     async checkIn(): Promise<ApiResponse<{ success: boolean; reward: number; newBalance: number }>> {
+      if (isFirebaseConfigured && auth?.currentUser && db) {
+        try {
+          const userRef = doc(db!, 'users', auth.currentUser.uid);
+          const userSnap = await getDoc(userRef);
+          if (!userSnap.exists()) {
+            return { success: false, data: { success: false, reward: 0, newBalance: 0 }, message: 'User profile not found', timestamp: new Date().toISOString() };
+          }
+          const userData = userSnap.data();
+          const today = new Date().toDateString();
+          if (userData.lastCheckIn === today) {
+            return {
+              success: false,
+              data: { success: false, reward: 0, newBalance: userData.credits },
+              message: 'Already checked in today',
+              timestamp: new Date().toISOString()
+            };
+          }
+          const newBalance = (userData.credits || 0) + 10;
+          await updateDoc(userRef, {
+            lastCheckIn: today,
+            credits: newBalance
+          });
+          await mockDb.addTransaction(10, 'checkin', 'Daily Reward Checkin');
+          return {
+            success: true,
+            data: { success: true, reward: 10, newBalance },
+            timestamp: new Date().toISOString()
+          };
+        } catch (err) {
+          console.error('Failed to check in:', err);
+        }
+      }
+
       const raw = localStorage.getItem('nebula-user');
       if (!raw) {
         return { success: false, data: { success: false, reward: 0, newBalance: 0 }, message: 'Session expired', timestamp: new Date().toISOString() };
