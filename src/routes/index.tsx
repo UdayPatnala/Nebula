@@ -12,6 +12,7 @@ import LoginPage from '../pages/LoginPage';
 import SignupPage from '../pages/SignupPage';
 import OnboardingPage from '../pages/OnboardingPage';
 import DashboardPage from '../pages/DashboardPage';
+import ProjectsPage from '../pages/ProjectsPage';
 import UploadPage from '../pages/UploadPage';
 import AIProcessingPage from '../pages/AIProcessingPage';
 import AIReviewPage from '../pages/AIReviewPage';
@@ -158,7 +159,7 @@ export const router = createBrowserRouter([
       },
       {
         path: '/projects',
-        element: <DashboardPage />,
+        element: <ProjectsPage />,
       },
       {
         path: '/projects/:projectId',
@@ -186,7 +187,7 @@ export const router = createBrowserRouter([
       },
       {
         path: '/galleries',
-        element: <DashboardPage />,
+        element: <ProjectsPage />,
       },
       {
         path: '/credits',

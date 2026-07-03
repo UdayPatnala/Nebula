@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useNotification } from '../providers';
 import { useProjectsState } from '../hooks/useProjectsState';
 import Card from '../components/Card';
@@ -12,8 +12,14 @@ import type { Project } from '../types/project';
 
 export default function ProjectsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { showToast } = useNotification();
-  const { projects, isLoading, createProject, deleteProject } = useProjectsState();
+  const { projects: allProjects, isLoading, createProject, deleteProject } = useProjectsState();
+
+  const isGalleriesView = location.pathname === '/galleries';
+  const projects = isGalleriesView 
+    ? allProjects.filter(p => p.status === 'published')
+    : allProjects;
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
@@ -63,28 +69,44 @@ export default function ProjectsPage() {
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h2 style={{ fontSize: 'var(--font-size-h2)', fontWeight: 'var(--weight-bold)', margin: '0 0 var(--spacing-xxs) 0' }}>
-            My Projects
+            {isGalleriesView ? 'My Galleries' : 'My Projects'}
           </h2>
           <p style={{ fontSize: 'var(--font-size-body)', color: 'var(--color-text-secondary)', margin: 0 }}>
-            Manage your media collections and published galleries.
+            {isGalleriesView 
+              ? 'Browse and manage your published interactive stories.' 
+              : 'Manage your media collections and published galleries.'}
           </p>
         </div>
-        <Button variant="primary" onClick={() => setShowCreateModal(true)}>
-          + New Project
-        </Button>
+        {!isGalleriesView && (
+          <Button variant="primary" onClick={() => setShowCreateModal(true)}>
+            + New Project
+          </Button>
+        )}
       </header>
 
       {/* Empty state */}
       {projects.length === 0 && (
         <Card style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>
-          <div style={{ fontSize: '3rem', marginBottom: 'var(--spacing-sm)' }}>🗂️</div>
-          <h3 style={{ margin: '0 0 var(--spacing-xs) 0' }}>No projects yet</h3>
+          <div style={{ fontSize: '3rem', marginBottom: 'var(--spacing-sm)' }}>
+            {isGalleriesView ? '🎨' : '🗂️'}
+          </div>
+          <h3 style={{ margin: '0 0 var(--spacing-xs) 0' }}>
+            {isGalleriesView ? 'No published galleries yet' : 'No projects yet'}
+          </h3>
           <p style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-md)' }}>
-            Create your first project to start uploading media and generating AI-powered galleries.
+            {isGalleriesView 
+              ? 'Publish a project as a gallery to share it with your audience.' 
+              : 'Create your first project to start uploading media and generating AI-powered galleries.'}
           </p>
-          <Button variant="primary" onClick={() => setShowCreateModal(true)}>
-            Create First Project
-          </Button>
+          {!isGalleriesView ? (
+            <Button variant="primary" onClick={() => setShowCreateModal(true)}>
+              Create First Project
+            </Button>
+          ) : (
+            <Button variant="primary" onClick={() => navigate('/projects')}>
+              Go to Projects
+            </Button>
+          )}
         </Card>
       )}
 
