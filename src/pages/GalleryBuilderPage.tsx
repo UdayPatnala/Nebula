@@ -64,7 +64,7 @@ export default function GalleryBuilderPage() {
       // Simulate publisher steps (Section 14.6 - checking completed uploads, preview, transaction commit)
       await new Promise((resolve) => setTimeout(resolve, 1200));
 
-      const mockShareId = `share_${Math.random().toString(36).substr(2, 9)}`;
+      const mockShareId = `share_${projectId}`;
       const mockUrl = `${window.location.origin}/gallery/${mockShareId}`;
 
       const res = await api.projects.update(projectId, {

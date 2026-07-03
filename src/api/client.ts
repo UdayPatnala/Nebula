@@ -137,13 +137,13 @@ export const api = {
       };
     },
 
-    async uploadMedia(projectId: string, filesCount: number): Promise<ApiResponse<Project | null>> {
+    async uploadMedia(projectId: string, files: any[]): Promise<ApiResponse<Project | null>> {
       const proj = await mockDb.getProjectById(projectId);
       if (!proj) {
         return { success: false, data: null, message: 'Project not found', timestamp: new Date().toISOString() };
       }
 
-      // High quality landscape photos matching the design system
+      // High quality landscape photos matching the design system (fallback)
       const samplePhotos = [
         'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
         'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=800&q=80',
@@ -156,15 +156,15 @@ export const api = {
       ];
 
       const currentMedia = proj.media || [];
-      const newMedia = Array.from({ length: filesCount }).map((_, index) => {
+      const newMedia = files.map((file, index) => {
         const id = `img_${Math.random().toString(36).substr(2, 9)}`;
-        const url = samplePhotos[(currentMedia.length + index) % samplePhotos.length];
+        const fallbackUrl = samplePhotos[(currentMedia.length + index) % samplePhotos.length];
         return {
           id,
-          name: `upload_${currentMedia.length + index + 1}.jpg`,
+          name: file.name,
           type: 'image' as const,
-          size: 1.5 * 1024 * 1024,
-          url,
+          size: file.size || 1.5 * 1024 * 1024,
+          url: file.dataUrl || fallbackUrl,
           uploadedAt: new Date().toISOString(),
           metadata: {
             tags: ['beach', 'nature', 'travel', 'people', 'scenic'],
@@ -177,7 +177,7 @@ export const api = {
       });
 
       const updated = await mockDb.updateProject(projectId, {
-        mediaCount: (proj.mediaCount || 0) + filesCount,
+        mediaCount: (proj.mediaCount || 0) + files.length,
         media: [...currentMedia, ...newMedia]
       });
 

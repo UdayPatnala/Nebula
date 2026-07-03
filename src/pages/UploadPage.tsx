@@ -18,11 +18,11 @@ export default function UploadPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Define upload completed callback
-  const handleUploadSuccess = async (completedCount: number) => {
+  const handleUploadSuccess = async (completedFiles: any[]) => {
     if (!projectId) return;
-    // Update media asset counts inside local DB
-    await api.projects.uploadMedia(projectId, completedCount);
-    showToast(`Successfully uploaded ${completedCount} files to project!`, 'success');
+    // Update media assets inside local DB
+    await api.projects.uploadMedia(projectId, completedFiles);
+    showToast(`Successfully uploaded ${completedFiles.length} files to project!`, 'success');
     
     // Auto route to AI Processing pipeline (Section 6.8 & Section 15)
     setTimeout(() => {
